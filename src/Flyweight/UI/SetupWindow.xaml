@@ -1,0 +1,42 @@
+<Window x:Class="Flyweight.UI.SetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Install Flyweight"
+        Width="440"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        UseLayoutRounding="True">
+  <Border x:Name="Root" Padding="20" Background="{DynamicResource Bg}">
+  <StackPanel>
+    <DockPanel>
+      <Image Source="pack://application:,,,/Flyweight;component/Assets/icon.png" Width="48" Height="48" Margin="0,0,14,0"
+             RenderOptions.BitmapScalingMode="HighQuality" />
+      <StackPanel VerticalAlignment="Center">
+        <TextBlock Text="Flyweight" FontSize="18" FontWeight="SemiBold" />
+        <TextBlock Text="Drop a video in, get a smaller one out." Style="{DynamicResource Muted}" Margin="0,1,0,0" />
+      </StackPanel>
+    </DockPanel>
+
+    <TextBlock TextWrapping="Wrap" Margin="0,16,0,0"
+               Text="Adds a Compress video entry to the right-click menu of your videos, plus a Start menu item." />
+    <TextBlock Style="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"
+               Text="No admin rights needed. Nothing runs in the background or at startup." />
+
+    <CheckBox x:Name="DesktopIconBox" IsChecked="True" Margin="0,14,0,0">
+      <TextBlock Text="Add a desktop icon (you can drop videos straight onto it)" />
+    </CheckBox>
+
+    <Border x:Name="ToolsNote" Visibility="Collapsed" Margin="0,14,0,0" Padding="10,8" CornerRadius="6" Background="{DynamicResource DangerSoft}">
+      <TextBlock TextWrapping="Wrap" Text="ffmpeg, the engine that does the compressing, isn't installed yet. The app will offer to install it when it opens." />
+    </Border>
+
+    <TextBlock x:Name="ErrorText" Visibility="Collapsed" Foreground="{DynamicResource Danger}" TextWrapping="Wrap" Margin="0,12,0,0" />
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+      <Button x:Name="CancelButton" Style="{DynamicResource SecondaryButton}" Margin="0,0,8,0" IsCancel="True" Click="CancelButton_Click">Cancel</Button>
+      <Button x:Name="InstallButton" Style="{DynamicResource PrimaryButton}" IsDefault="True" Click="InstallButton_Click">Install</Button>
+    </StackPanel>
+  </StackPanel>
+  </Border>
+</Window>

@@ -1,0 +1,17 @@
+# Build outputs. Releases go on the GitHub releases page instead.
+bin/
+obj/
+dist/
+
+# Test results
+TestResults/
+
+# Editor and OS clutter
+.vs/
+.vscode/
+*.user
+.DS_Store
+Thumbs.db
+
+# Local Claude Code settings
+.claude/

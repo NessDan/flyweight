@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Targets .NET Framework 4.8 because it ships with Windows 10/11: nothing to install,
+       and the whole app stays a single small EXE. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Flyweight</AssemblyName>
+    <RootNamespace>Flyweight</RootNamespace>
+    <StartupObject>Flyweight.Program</StartupObject>
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <Product>Flyweight</Product>
+    <AssemblyTitle>Flyweight</AssemblyTitle>
+    <Company>Flyweight</Company>
+    <Copyright></Copyright>
+    <Prefer32Bit>false</Prefer32Bit>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <DebugType>embedded</DebugType>
+    <!-- Keeps the path of the machine it was built on out of the published program, and lets the
+         same source build to the same bytes whatever state the Git checkout is in. -->
+    <PathMap>$(MSBuildProjectDirectory)=C:\flyweight\</PathMap>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+    <EnableSourceLink>false</EnableSourceLink>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="Microsoft.CSharp" />
+    <Resource Include="Assets\icon.png" />
+    <InternalsVisibleTo Include="Flyweight.Tests" />
+  </ItemGroup>
+
+</Project>

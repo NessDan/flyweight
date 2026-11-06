@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flyweight: a tiny video compressor for Windows</title>
+<meta name="description" content="Drop a video in and get a smaller one out, or right-click any video and pick a level. Free for Windows 10 and 11. The app is 160 KB and nothing runs in the background.">
+<link rel="canonical" href="https://nessdan.github.io/flyweight/">
+<meta name="theme-color" content="#ff2f8e">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="img/icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Flyweight">
+<meta property="og:title" content="Flyweight: heavyweight videos, flyweight files">
+<meta property="og:description" content="Drop a video in and get a smaller one out, or right-click any video and pick a level. Free for Windows 10 and 11.">
+<meta property="og:url" content="https://nessdan.github.io/flyweight/">
+<meta property="og:image" content="https://nessdan.github.io/flyweight/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The Flyweight poster: Heavyweight videos. Flyweight files.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&amp;family=Anton&amp;family=Archivo:wdth,wght@75..100,400..800&amp;display=swap">
+<link rel="stylesheet" href="style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Flyweight",
+  "description": "A tiny video compressor for Windows. Drop a video in and get a smaller one out, or right-click any video and pick a level.",
+  "applicationCategory": "MultimediaApplication",
+  "operatingSystem": "Windows 10, Windows 11",
+  "url": "https://nessdan.github.io/flyweight/",
+  "downloadUrl": "https://github.com/NessDan/flyweight/releases/latest/download/FlyweightSetup.exe",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+<script defer src="site.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- Knocks tiny flecks out of the big type, the way worn wood type prints. -->
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <filter id="worn-ink" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="3" seed="11" result="noise"/>
+    <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -14 11.6" result="flecks"/>
+    <feComposite in="SourceGraphic" in2="flecks" operator="in"/>
+  </filter>
+</svg>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="#top"><img src="img/icon.png" alt="" width="24" height="24">Flyweight</a>
+    <nav aria-label="On this page">
+      <a href="#how">How it works</a>
+      <a href="#card">Results</a>
+      <a href="#presets">Presets</a>
+      <a href="#questions">Questions</a>
+      <a href="https://github.com/NessDan/flyweight">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="poster" id="top">
+    <div class="wrap">
+      <p class="topline"><span aria-hidden="true">&#9733;&nbsp;&#9733;&nbsp;&#9733;</span> Free for Windows 10 &amp; 11 <span aria-hidden="true">&#9733;&nbsp;&#9733;&nbsp;&#9733;</span></p>
+      <h1 class="wordmark display">Flyweight</h1>
+      <p class="strap">Heavyweight videos. Flyweight files.</p>
+
+      <div class="poster-grid">
+        <div class="pitch">
+          <p class="lede">Drop a video in and get a smaller one out. Or right-click any video and pick a level. There's nothing to set up, and nothing left running afterward.</p>
+          <a class="download" href="https://github.com/NessDan/flyweight/releases/latest/download/FlyweightSetup.exe">
+            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false"><path d="M12 3v12M7 10.5l5 5 5-5M4 20h16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/></svg>
+            Download for Windows
+          </a>
+          <ul class="facts">
+            <li>160 KB</li>
+            <li>No account</li>
+            <li>No admin rights</li>
+          </ul>
+          <p class="small">Flyweight runs on ffmpeg, the free engine behind many video tools. If you don't have it, Flyweight offers to install it. Windows may warn you the first time you run the download, so <a href="#smartscreen">here's what to click</a>.</p>
+        </div>
+
+        <section class="weighin knockout" aria-labelledby="weighin-title">
+          <h2 class="banner" id="weighin-title">The weigh-in</h2>
+          <svg class="dial" viewBox="0 0 320 250" role="img" aria-label="A scale showing the file's weight in megabytes, from 0 to 100." style="--start: 100.6">
+            <path class="tick-minor" d="M42.4 215.4L50.5 211.5M38.2 205.3L46.6 202.2M34.8 195.0L43.5 192.5M32.3 184.4L41.1 182.7M30.0 162.7L39.0 162.5M30.3 151.8L39.2 152.4M31.4 141.0L40.3 142.3M33.4 130.3L42.2 132.4M40.2 109.6L48.5 113.1M44.8 99.8L52.8 103.9M50.2 90.3L57.8 95.2M56.5 81.4L63.6 86.8M71.0 65.2L77.2 71.8M79.3 58.1L84.8 65.2M88.1 51.7L93.0 59.2M97.4 46.1L101.7 54.0M117.2 37.2L120.2 45.7M127.7 34.1L129.9 42.8M138.3 31.8L139.8 40.7M149.1 30.5L149.9 39.4M170.9 30.5L170.1 39.4M181.7 31.8L180.2 40.7M192.3 34.1L190.1 42.8M202.8 37.2L199.8 45.7M222.6 46.1L218.3 54.0M231.9 51.7L227.0 59.2M240.7 58.1L235.2 65.2M249.0 65.2L242.8 71.8M263.5 81.4L256.4 86.8M269.8 90.3L262.2 95.2M275.2 99.8L267.2 103.9M279.8 109.6L271.5 113.1M286.6 130.3L277.8 132.4M288.6 141.0L279.7 142.3M289.7 151.8L280.8 152.4M290.0 162.7L281.0 162.5M287.7 184.4L278.9 182.7M285.2 195.0L276.5 192.5M281.8 205.3L273.4 202.2M277.6 215.4L269.5 211.5"/>
+            <path class="tick-medium" d="M30.7 173.6L46.6 171.9M63.4 73.0L75.3 83.7M160.0 30.0L160.0 46.0M256.6 73.0L244.7 83.7M289.3 173.6L273.4 171.9"/>
+            <path class="tick-major" d="M47.4 225.0L66.5 214.0M36.4 119.8L57.3 126.6M107.1 41.2L116.1 61.3M212.9 41.2L203.9 61.3M283.6 119.8L262.7 126.6M272.6 225.0L253.5 214.0"/>
+            <text class="dial-label" x="81.2" y="212.5">0</text>
+            <text class="dial-label" x="73.5" y="138.9">20</text>
+            <text class="dial-label" x="123" y="83.9">40</text>
+            <text class="dial-label" x="197" y="83.9">60</text>
+            <text class="dial-label" x="246.5" y="138.9">80</text>
+            <text class="dial-label" x="238.8" y="212.5">100</text>
+            <path class="start-mark" d="M0 -6L6 5H-6Z" transform="translate(279 233) rotate(301.4)"/>
+            <text class="dial-value" id="dial-value" x="160" y="226">12.8</text>
+            <text class="dial-unit" x="160" y="245">MB</text>
+            <g class="needle" id="needle" style="--weight: 12.8">
+              <path class="needle-arm" d="M160 34L165.5 168H154.5Z"/>
+              <circle class="needle-cap" cx="160" cy="160" r="11"/>
+            </g>
+          </svg>
+          <script>
+            // Opens at the starting weight, so the first thing the needle does is drop. See site.js.
+            if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+              document.getElementById('needle').style.setProperty('--weight', 100.6);
+              document.getElementById('dial-value').textContent = '100.6';
+            }
+          </script>
+          <div class="levels" role="group" aria-label="Choose a level">
+            <button class="level" type="button" aria-pressed="false" data-mb="39.0" data-smaller="61" data-score="97">Light<small>Full resolution</small></button>
+            <button class="level" type="button" aria-pressed="true" data-mb="12.8" data-smaller="87" data-score="94">Balanced<small>Up to 1080p</small></button>
+            <button class="level" type="button" aria-pressed="false" data-mb="7.2" data-smaller="93" data-score="84">Maximum<small>720p, 30 fps</small></button>
+          </div>
+          <p class="result" id="weighin-result" aria-live="polite"><strong>87% smaller.</strong> Picture score 94 out of 100.</p>
+          <p class="small">A 100.6 MB 4K video downloaded from X, measured through the app. The score is VMAF, where 100 matches the original.</p>
+        </section>
+
+        <figure class="window hero-window">
+          <div class="titlebar" aria-hidden="true"><img src="img/icon.png" alt="" width="16" height="16">Flyweight<span class="window-controls"><i></i><i></i><i></i></span></div>
+          <picture>
+            <source srcset="img/app-dark.webp" media="(prefers-color-scheme: dark)">
+            <img src="img/app-light.webp" width="960" height="945" alt="The Flyweight window: a drop zone, the Light, Balanced and Maximum levels, and three videos in the queue. A 101 MB clip came out at 13 MB.">
+          </picture>
+          <span class="burst" aria-hidden="true">Free</span>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="ink-band" id="how">
+    <div class="wrap how">
+      <div class="how-copy">
+        <h2 class="display section-title">Two ways in</h2>
+        <h3>Drop it</h3>
+        <p>Open Flyweight and drop videos or whole folders on the window. They queue up and run one at a time.</p>
+        <h3>Right-click it</h3>
+        <p>Select one video or a stack of them, right-click, and pick a level under Compress video. A small window shows progress in the corner without taking focus from what you're doing, then closes itself.</p>
+        <p>Your original is never changed. The smaller copy lands next to it as <code>name_compressed.mp4</code>.</p>
+      </div>
+      <div class="screen">
+        <div class="file" aria-hidden="true"><span class="file-icon"></span>Clip from X (4K).mp4</div>
+        <div class="menu-stage" role="img" aria-label="The right-click menu on a video. Compress video opens a submenu with Light (full resolution), Balanced (up to 1080p), Maximum (720p, 30 fps), and presets you've made, such as Discord.">
+          <div class="menu menu-main" aria-hidden="true">
+            <div>Open</div>
+            <div>Open with</div>
+            <div class="hot"><img src="img/icon.png" alt="" width="16" height="16">Compress video<b>&#8250;</b></div>
+            <hr>
+            <div>Cut</div>
+            <div>Copy</div>
+            <hr>
+            <div>Properties</div>
+          </div>
+          <div class="menu menu-sub" aria-hidden="true">
+            <div>Light (full resolution)</div>
+            <div class="hot">Balanced (up to 1080p)</div>
+            <div>Maximum (720p, 30 fps)</div>
+            <hr>
+            <div>Discord</div>
+          </div>
+        </div>
+        <figure class="window corner-window">
+          <div class="titlebar" aria-hidden="true"><img src="img/icon.png" alt="" width="16" height="16">Flyweight<span class="window-controls"><i></i><i></i><i></i></span></div>
+          <picture>
+            <source srcset="img/corner-dark.webp" media="(prefers-color-scheme: dark)">
+            <img src="img/corner-light.webp" width="960" height="425" loading="lazy" alt="The small progress window that right-click jobs open in the corner of the screen, showing two finished videos and one at 62%.">
+          </picture>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="card">
+    <div class="wrap">
+      <h2 class="display section-title">The card</h2>
+      <p class="intro">Every level compresses hard. They differ in what they keep. Light keeps full resolution and frame rate, Balanced brings anything bigger down to 1080p, and Maximum brings video down to 720p at 30 fps.</p>
+      <div class="knockout card-wrap">
+        <table class="fightcard">
+          <caption>How much smaller each level made real footage. Bars show what's left of the original file.</caption>
+          <thead>
+            <tr>
+              <th scope="col">Video</th>
+              <th scope="col">Light<small>Full resolution</small></th>
+              <th scope="col">Balanced<small>Up to 1080p</small></th>
+              <th scope="col">Maximum<small>720p, 30 fps</small></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Game capture<small>1080p, 120 fps, 121 Mbps</small></th>
+              <td data-level="Light" style="--left: 8"><b>92%</b><i></i></td>
+              <td data-level="Balanced" style="--left: 8"><b>92%</b><i></i></td>
+              <td data-level="Maximum" style="--left: 2"><b>98%</b><i></i></td>
+            </tr>
+            <tr>
+              <th scope="row">OBS capture<small>1080p, 60 fps, 33 Mbps</small></th>
+              <td data-level="Light" style="--left: 16"><b>84%</b><i></i></td>
+              <td data-level="Balanced" style="--left: 16"><b>84%</b><i></i></td>
+              <td data-level="Maximum" style="--left: 5"><b>95%</b><i></i></td>
+            </tr>
+            <tr>
+              <th scope="row">Phone video<small>4K, 60 fps, 64 Mbps</small></th>
+              <td data-level="Light" style="--left: 33"><b>67%</b><i></i></td>
+              <td data-level="Balanced" style="--left: 9"><b>91%</b><i></i></td>
+              <td data-level="Maximum" style="--left: 3"><b>97%</b><i></i></td>
+            </tr>
+            <tr>
+              <th scope="row">Video from X<small>4K, 30 fps, 13 Mbps</small></th>
+              <td data-level="Light" style="--left: 39"><b>61%</b><i></i></td>
+              <td data-level="Balanced" style="--left: 13"><b>87%</b><i></i></td>
+              <td data-level="Maximum" style="--left: 7"><b>93%</b><i></i></td>
+            </tr>
+            <tr>
+              <th scope="row">Vertical video from X<small>1080p, 30 fps, 8 Mbps</small></th>
+              <td data-level="Light" style="--left: 31"><b>69%</b><i></i></td>
+              <td data-level="Balanced" style="--left: 31"><b>69%</b><i></i></td>
+              <td data-level="Maximum" style="--left: 15"><b>85%</b><i></i></td>
+            </tr>
+            <tr>
+              <th scope="row">OBS recording<small>1080p, 30 fps, 4 Mbps</small></th>
+              <td data-level="Light" style="--left: 34"><b>66%</b><i></i></td>
+              <td data-level="Balanced" style="--left: 34"><b>66%</b><i></i></td>
+              <td data-level="Maximum" style="--left: 14"><b>86%</b><i></i></td>
+            </tr>
+            <tr>
+              <th scope="row">Downloaded video<small>1080p, 60 fps, 5 Mbps</small></th>
+              <td data-level="Light" style="--left: 61"><b>39%</b><i></i></td>
+              <td data-level="Balanced" style="--left: 61"><b>39%</b><i></i></td>
+              <td data-level="Maximum" style="--left: 19"><b>81%</b><i></i></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-notes">
+        <p>Measured through the app with an RTX 5080. Your numbers depend on the video, and footage that's already been squeezed hard has the least left to give.</p>
+        <p>On a video that's 1080p or smaller, Light and Balanced give the same result. At full resolution, Light scored between 87 and 97 on VMAF, a picture-quality score where 100 matches the original.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section weigh-section" id="presets">
+    <div class="wrap presets">
+      <div class="presets-copy">
+        <h2 class="display section-title">Make weight</h2>
+        <p class="intro">Every site has an upload limit. Click <strong>+ New preset</strong>, name it, and set <strong>Fit under</strong> to the limit. It gets its own card in the app and its own entry in the right-click menu.</p>
+        <p>If a video can't make weight at its current size without looking terrible, Flyweight lowers the frame rate, then the resolution. Limits change, so Flyweight doesn't guess them. You set the number.</p>
+        <dl class="ticket knockout">
+          <div><dt>Limit</dt><dd>5 MB</dd></div>
+          <div><dt>Went in at</dt><dd>93 MB</dd></div>
+          <div><dt>Came out at</dt><dd>4.56 MB</dd></div>
+          <div><dt>Took</dt><dd>13 sec</dd></div>
+        </dl>
+        <p class="small">A real run: a 5 MB preset, chosen from the right-click menu on an OBS capture.</p>
+      </div>
+      <figure class="window presets-window">
+        <div class="titlebar" aria-hidden="true"><img src="img/icon.png" alt="" width="16" height="16">Flyweight<span class="window-controls"><i></i><i></i><i></i></span></div>
+        <picture>
+          <source srcset="img/presets-dark.webp" media="(prefers-color-scheme: dark)">
+          <img src="img/presets-light.webp" width="960" height="1420" loading="lazy" alt="A custom preset called Discord, set to fit under 10 MB, with Advanced options open: format, encoder, quality, resolution, frame rate, audio, target size, extra ffmpeg options, and save location.">
+        </picture>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="tape">
+    <div class="wrap tape-layout">
+      <div>
+        <h2 class="display section-title">Tale of the tape</h2>
+        <p class="intro">A compressor should use your PC while it's compressing and leave it alone the rest of the time.</p>
+        <p>While it runs, Flyweight goes full speed at low priority, so anything you're doing still goes first. With an NVIDIA card it uses the graphics card's encoder chips, both of them on cards that have two.</p>
+        <p>Need more control? <strong>Advanced options</strong> covers format (H.265, H.264 or AV1), graphics card or processor, quality, resolution, frame rate, audio, and your own ffmpeg flags. Changes stick, and the right-click menu uses them too.</p>
+      </div>
+      <dl class="tape knockout">
+        <div><dt>The program</dt><dd>160 KB</dd></div>
+        <div><dt>Running when you're not using it</dt><dd>Nothing</dd></div>
+        <div><dt>Starting with Windows</dt><dd>Nothing</dd></div>
+        <div><dt>Admin rights needed</dt><dd>None</dd></div>
+        <div><dt>Added to Explorer</dt><dd>Menu entries only</dd></div>
+        <div><dt>Videos uploaded anywhere</dt><dd>None</dd></div>
+        <div><dt>Speed, 1080p at 60 fps, RTX 5080</dt><dd>About 10&times; real time</dd></div>
+        <div><dt>Speed, 4K at 60 fps, RTX 5080</dt><dd>About 3&times; real time</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section" id="questions">
+    <div class="wrap">
+      <h2 class="display section-title">Fine print</h2>
+      <div class="knockout questions">
+        <div id="smartscreen">
+          <h3>Windows says it protected my PC. Is this safe?</h3>
+          <p>Windows shows that warning for new programs that aren't signed with a paid certificate. Click <strong>More info</strong>, then <strong>Run anyway</strong>. The code is <a href="https://github.com/NessDan/flyweight">public on GitHub</a>, and each release lists a SHA-256 checksum so you can check your copy.</p>
+        </div>
+        <div>
+          <h3>What's ffmpeg, and do I need it?</h3>
+          <p>ffmpeg is the free engine that does the compressing, and Flyweight uses the copy on your PC. If you don't have one, Flyweight offers to install it with Windows' own package manager. That takes about 550 MB of disk space.</p>
+        </div>
+        <div>
+          <h3>Do I need an NVIDIA graphics card?</h3>
+          <p>No, but it's a lot faster with one. On any other PC, including AMD and Intel graphics, Flyweight uses your processor, which takes longer and keeps your PC busier.</p>
+        </div>
+        <div>
+          <h3>Where's the right-click menu on Windows 11?</h3>
+          <p>Windows 11 keeps entries like this under <strong>Show more options</strong>. Holding Shift while you right-click goes straight there.</p>
+        </div>
+        <div>
+          <h3>Does it send my videos anywhere?</h3>
+          <p>No. Everything happens on your PC. Flyweight has no accounts, no ads and no tracking, and it never connects to the internet itself.</p>
+        </div>
+        <div>
+          <h3>Which videos does it work with?</h3>
+          <p>MP4, MOV, MKV, AVI, WMV, WebM, MPEG, FLV, TS and more. Results are always MP4. If a result wouldn't be smaller, your original is left as is and no new file is made.</p>
+        </div>
+        <div>
+          <h3>Will my videos still play everywhere?</h3>
+          <p>H.265, the default, plays on most recent phones, TVs and browsers, but some sites and apps still expect H.264. If a video won't play or upload somewhere, change <strong>Format</strong> to H.264 under Advanced options. Files come out about a third bigger, so it's a good choice for presets aimed at upload sites.</p>
+        </div>
+        <div>
+          <h3>How do I remove it?</h3>
+          <p>Use Apps &amp; features in Windows, like any other program. Its menu entries and settings go with it, and your videos stay where they are.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <a class="finale" href="https://github.com/NessDan/flyweight/releases/latest/download/FlyweightSetup.exe">
+    <span class="wrap"><span class="display finale-word">Download Flyweight</span></span>
+  </a>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <p>Made by <a href="https://github.com/NessDan">NessDan</a>. <a href="https://github.com/NessDan/flyweight">Code on GitHub</a>. <a href="https://github.com/NessDan/flyweight/releases">All releases</a>.</p>
+    <p>Compression by <a href="https://ffmpeg.org">FFmpeg</a>. Flyweight isn't affiliated with the FFmpeg project or NVIDIA.</p>
+  </div>
+</footer>
+</body>
+</html>
