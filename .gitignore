@@ -15,3 +15,6 @@ Thumbs.db
 
 # Local Claude Code settings
 .claude/
+
+# Cloudflare's local working files
+.wrangler/

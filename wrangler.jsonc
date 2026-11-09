@@ -1,0 +1,17 @@
+{
+  // The Flyweight website: the plain files in docs/, served from Cloudflare.
+  // The download stays on GitHub Releases, so a new app version doesn't need a deploy.
+  "name": "flyweight",
+  // The Kasprofessional LLC Cloudflare account. Pinned so no command can deploy this anywhere else.
+  "account_id": "b9c72d88225217fbbdd774010fef8be5",
+  "compatibility_date": "2026-11-09",
+  "assets": {
+    "directory": "./docs"
+  },
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "getflyweight.com", "custom_domain": true },
+    { "pattern": "www.getflyweight.com", "custom_domain": true }
+  ]
+}

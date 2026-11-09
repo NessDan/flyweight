@@ -4,7 +4,7 @@
 
 Drop a video in and get a smaller one out. Or right-click any video and pick a level, or a preset you made.
 
-**[Website](https://nessdan.github.io/flyweight/) · [Download](https://github.com/NessDan/flyweight/releases/latest/download/FlyweightSetup.exe)**
+**[Website](https://getflyweight.com/) · [Download](https://github.com/NessDan/flyweight/releases/latest/download/FlyweightSetup.exe)**
 
 It's a single small program, about 150 KB. It needs no admin rights, nothing runs in the background or at
 startup, and the right-click menu is plain registry entries rather than a shell extension, so Explorer
@@ -106,4 +106,4 @@ and some encode with NVENC when an NVIDIA card is present.
 The engine is in `src/Flyweight/Core` and the windows are in `src/Flyweight/UI`.
 `CommandBuilder.cs` holds every decision about what gets passed to ffmpeg.
 
-The website is the static page in `docs`, published with GitHub Pages.
+The website is the static page in `docs`, served from Cloudflare. `npx wrangler deploy` publishes it.
