@@ -6,7 +6,7 @@ Drop a video in and get a smaller one out. Or right-click any video and pick a l
 
 **[Website](https://nessdan.github.io/flyweight/) · [Download](https://github.com/NessDan/flyweight/releases/latest/download/FlyweightSetup.exe)**
 
-It's a single small program, about 160 KB. It needs no admin rights, nothing runs in the background or at
+It's a single small program, about 150 KB. It needs no admin rights, nothing runs in the background or at
 startup, and the right-click menu is plain registry entries rather than a shell extension, so Explorer
 doesn't load anything extra. When idle it costs nothing.
 

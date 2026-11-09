@@ -1,49 +1,71 @@
 # Draws the app icon and writes Assets\app.ico plus Assets\icon.png.
 # Run this only to change the icon; the results are checked in and the normal build doesn't need it.
+# It's a small version of the website's poster: a black wood-type F on the pink-to-yellow sheet.
 param([string]$OutDir = (Join-Path $PSScriptRoot '..\src\Flyweight\Assets'))
 
 Add-Type -AssemblyName System.Drawing
 New-Item -ItemType Directory -Force $OutDir | Out-Null
 
-function New-RoundedSquare([float]$size, [float]$radius) {
-    $d = $radius * 2
-    $path = New-Object System.Drawing.Drawing2D.GraphicsPath
-    $path.AddArc(0, 0, $d, $d, 180, 90)
-    $path.AddArc($size - $d - 0.01, 0, $d, $d, 270, 90)
-    $path.AddArc($size - $d - 0.01, $size - $d - 0.01, $d, $d, 0, 90)
-    $path.AddArc(0, $size - $d - 0.01, $d, $d, 90, 90)
-    $path.CloseFigure()
-    return $path
+$Pink = [System.Drawing.Color]::FromArgb(255, 255, 47, 142)
+$Orange = [System.Drawing.Color]::FromArgb(255, 255, 138, 0)
+$Yellow = [System.Drawing.Color]::FromArgb(255, 255, 230, 0)
+$Ink = [System.Drawing.Color]::FromArgb(255, 18, 16, 15)
+
+function New-SheetBrush([int]$size) {
+    $rect = New-Object System.Drawing.RectangleF 0, 0, $size, $size
+    $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush $rect, $Pink, $Yellow, 0.0
+    $blend = New-Object System.Drawing.Drawing2D.ColorBlend 3
+    $blend.Colors = [System.Drawing.Color[]]@($Pink, $Orange, $Yellow)
+    $blend.Positions = [single[]]@(0.0, 0.52, 1.0)
+    $brush.InterpolationColors = $blend
+    return $brush
+}
+
+# The letter is all straight edges, snapped to whole pixels so it stays crisp at 16 pixels.
+function Get-LetterF([int]$sheet, [int]$offset) {
+    function Snap([double]$v) { [Math]::Round($v * $sheet) + $offset }
+
+    $left = 0.27
+    $right = 0.73
+    $top = 0.1
+    $bottom = 0.9
+    $height = $bottom - $top
+    $stem = $left + ($right - $left) * 0.55
+    $armBottom = $top + $height * 0.2
+    $midTop = $top + $height * 0.42
+    $midBottom = $midTop + $height * 0.19
+    $midRight = $left + ($right - $left) * 0.91
+
+    $corners = @(
+        @($left, $top), @($right, $top), @($right, $armBottom), @($stem, $armBottom), @($stem, $midTop),
+        @($midRight, $midTop), @($midRight, $midBottom), @($stem, $midBottom), @($stem, $bottom), @($left, $bottom)
+    )
+    $points = New-Object 'System.Drawing.PointF[]' $corners.Count
+    for ($i = 0; $i -lt $corners.Count; $i++) {
+        $points[$i] = New-Object System.Drawing.PointF (Snap $corners[$i][0]), (Snap $corners[$i][1])
+    }
+    return , $points
 }
 
 function New-IconBitmap([int]$s) {
     $bmp = New-Object System.Drawing.Bitmap $s, $s, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
     $g = [System.Drawing.Graphics]::FromImage($bmp)
     $g.SmoothingMode = 'AntiAlias'
-    $g.PixelOffsetMode = 'HighQuality'
+    $g.PixelOffsetMode = 'Half'
+    $inkBrush = New-Object System.Drawing.SolidBrush $Ink
 
-    $background = New-RoundedSquare $s ([Math]::Max(2, $s * 0.22))
-    $rect = New-Object System.Drawing.RectangleF 0, 0, $s, $s
-    $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush $rect, ([System.Drawing.Color]::FromArgb(255, 22, 158, 145)), ([System.Drawing.Color]::FromArgb(255, 10, 94, 88)), 90
-    $g.FillPath($brush, $background)
+    # The hard shadow from the website's cards. Under 32 pixels the room goes to the letter instead.
+    $shadow = if ($s -ge 32) { [int][Math]::Max(2, [Math]::Round($s * 0.07)) } else { 0 }
+    $sheet = $s - $shadow
+    if ($shadow -gt 0) { $g.FillRectangle($inkBrush, $shadow, $shadow, $sheet, $sheet) }
+    $g.FillRectangle((New-SheetBrush $sheet), 0, 0, $sheet, $sheet)
 
-    $white = [System.Drawing.Brushes]::White
-    $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::White), ([Math]::Max(1.5, $s * 0.075))
-    $pen.StartCap = 'Round'
-    $pen.EndCap = 'Round'
-    $pen.LineJoin = 'Round'
-
-    function P([float]$x, [float]$y) { New-Object System.Drawing.PointF ($x * $s), ($y * $s) }
-
+    # The white offset behind the big type on the website.
     if ($s -ge 24) {
-        # Play symbol squeezed between two inward chevrons.
-        $g.FillPolygon($white, [System.Drawing.PointF[]]@((P 0.385 0.335), (P 0.385 0.665), (P 0.645 0.5)))
-        $g.DrawLines($pen, [System.Drawing.PointF[]]@((P 0.135 0.345), (P 0.245 0.5), (P 0.135 0.655)))
-        $g.DrawLines($pen, [System.Drawing.PointF[]]@((P 0.865 0.345), (P 0.755 0.5), (P 0.865 0.655)))
-    } else {
-        # Too small for the chevrons to read, so the play symbol gets the room.
-        $g.FillPolygon($white, [System.Drawing.PointF[]]@((P 0.31 0.2), (P 0.31 0.8), (P 0.82 0.5)))
+        $offset = [int][Math]::Max(1, [Math]::Round($s * 0.03))
+        $g.FillPolygon([System.Drawing.Brushes]::White, (Get-LetterF $sheet $offset))
     }
+    $g.FillPolygon($inkBrush, (Get-LetterF $sheet 0))
 
     $g.Dispose()
     return $bmp
