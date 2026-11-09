@@ -1,0 +1,14 @@
+{
+  // Publish with: npx wrangler deploy --config redirects/wrangler.jsonc
+  "name": "flyweight-redirects",
+  // The Kasprofessional LLC Cloudflare account. Pinned so no command can deploy this anywhere else.
+  "account_id": "b9c72d88225217fbbdd774010fef8be5",
+  "main": "index.js",
+  "compatibility_date": "2026-11-09",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "http://getflyweight.com/*", "zone_name": "getflyweight.com" },
+    { "pattern": "www.getflyweight.com/*", "zone_name": "getflyweight.com" }
+  ]
+}

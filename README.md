@@ -106,4 +106,6 @@ and some encode with NVENC when an NVIDIA card is present.
 The engine is in `src/Flyweight/Core` and the windows are in `src/Flyweight/UI`.
 `CommandBuilder.cs` holds every decision about what gets passed to ffmpeg.
 
-The website is the static page in `docs`, served from Cloudflare. `npx wrangler deploy` publishes it.
+The website is the static page in `docs`, served from Cloudflare. `npx wrangler deploy` publishes it. The small
+Worker in `redirects` sends `http://` and `www.` addresses to the main one, and
+`npx wrangler deploy --config redirects/wrangler.jsonc` publishes that.
