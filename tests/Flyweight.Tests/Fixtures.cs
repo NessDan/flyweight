@@ -38,6 +38,7 @@ namespace Flyweight.Tests
             {
                 Video = video ?? Video(),
                 DurationSeconds = duration,
+                FormatName = "mov,mp4,m4a,3gp,3g2,mj2",
                 Audio = audio.ToList(),
                 TextSubtitleIndexes = new List<int>(),
             };

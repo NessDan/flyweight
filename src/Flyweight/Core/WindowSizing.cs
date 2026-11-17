@@ -2,18 +2,17 @@ using System;
 
 namespace Flyweight.Core
 {
-    /// <summary>Brings a window back at the size it was left at, as long as that makes sense on this screen.</summary>
+    /// <summary>
+    /// Brings a window back at the width it was left at, as long as that makes sense on this screen.
+    /// Its height is never brought back: it's always whatever the window's contents come to.
+    /// </summary>
     public static class WindowSizing
     {
-        /// <returns>The size to use, or null if nothing usable was remembered.</returns>
-        public static (double Width, double Height)? Fit(double savedWidth, double savedHeight, double minWidth, double minHeight, double screenWidth, double screenHeight)
+        /// <returns>The width to use, or null if nothing usable was remembered.</returns>
+        public static double? Width(double saved, double min, double screen)
         {
-            if (!IsUsable(savedWidth) || !IsUsable(savedHeight)) return null;
-            return (Clamp(savedWidth, minWidth, screenWidth), Clamp(savedHeight, minHeight, screenHeight));
+            if (!(saved > 0) || double.IsInfinity(saved)) return null;
+            return Math.Max(min, Math.Min(saved, screen));
         }
-
-        private static bool IsUsable(double size) => size > 0 && !double.IsInfinity(size);
-
-        private static double Clamp(double value, double min, double max) => Math.Max(min, Math.Min(value, max));
     }
 }

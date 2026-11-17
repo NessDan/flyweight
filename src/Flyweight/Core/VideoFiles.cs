@@ -22,7 +22,9 @@ namespace Flyweight.Core
         public static readonly string[] MenuExtensions = Extensions.Except(new[] { ".ts", ".mts" }).ToArray();
 
         private static readonly HashSet<string> ExtensionSet = new HashSet<string>(Extensions, StringComparer.OrdinalIgnoreCase);
-        private static readonly Regex AlreadyCompressed = new Regex(Regex.Escape(OutputNamer.Suffix) + @"( \(\d+\))?\.mp4$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex MadeByThisApp = new Regex(
+            "(" + Regex.Escape(OutputNamer.Suffix) + "|" + Regex.Escape(OutputNamer.TrimmedSuffix) + @")( \(\d+\))?\.mp4$",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public static bool IsVideo(string path)
         {
@@ -31,7 +33,7 @@ namespace Flyweight.Core
 
         /// <summary>
         /// Turns dropped paths into the videos to compress. A folder means the videos directly inside
-        /// it, leaving out ones this app already made so dropping a folder twice doesn't recompress them.
+        /// it, leaving out ones this app already made so dropping a folder twice doesn't redo them.
         /// </summary>
         public static List<string> Expand(IEnumerable<string> paths)
         {
@@ -44,7 +46,7 @@ namespace Flyweight.Core
                 if (Directory.Exists(path))
                 {
                     candidates = Directory.EnumerateFiles(path)
-                        .Where(f => IsVideo(f) && !AlreadyCompressed.IsMatch(f))
+                        .Where(f => IsVideo(f) && !MadeByThisApp.IsMatch(f))
                         .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
                 }
                 else if (File.Exists(path) && IsVideo(path))

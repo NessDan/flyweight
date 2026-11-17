@@ -352,42 +352,39 @@ namespace Flyweight.Tests
 
     public class WindowSizingTests
     {
-        private static (double Width, double Height)? Fit(double width, double height)
+        private static double? Width(double saved) => WindowSizing.Width(saved, min: 480, screen: 1920);
+
+        [Fact]
+        public void Never_widened_means_nothing_to_bring_back()
         {
-            return WindowSizing.Fit(width, height, minWidth: 480, minHeight: 300, screenWidth: 1920, screenHeight: 1040);
+            Assert.Null(Width(0));
         }
 
         [Fact]
-        public void Never_resized_means_nothing_to_bring_back()
+        public void A_width_that_fits_comes_back_as_it_was()
         {
-            Assert.Null(Fit(0, 0));
+            Assert.Equal(900, Width(900));
         }
 
         [Fact]
-        public void A_size_that_fits_comes_back_as_it_was()
+        public void A_width_too_big_for_this_screen_is_brought_down_to_fit()
         {
-            Assert.Equal((900.0, 700.0), Fit(900, 700).Value);
+            Assert.Equal(1920, Width(3840));
         }
 
         [Fact]
-        public void A_size_too_big_for_this_screen_is_brought_down_to_fit()
+        public void A_width_below_the_least_is_brought_up_to_it()
         {
-            Assert.Equal((1920.0, 1040.0), Fit(3840, 2000).Value);
-        }
-
-        [Fact]
-        public void A_size_below_the_minimum_is_brought_up_to_it()
-        {
-            Assert.Equal((480.0, 300.0), Fit(100, 50).Value);
+            Assert.Equal(480, Width(100));
         }
 
         [Theory]
-        [InlineData(double.NaN, 700)]
-        [InlineData(900, double.PositiveInfinity)]
-        [InlineData(-900, 700)]
-        public void A_nonsense_size_is_ignored(double width, double height)
+        [InlineData(double.NaN)]
+        [InlineData(double.PositiveInfinity)]
+        [InlineData(-900)]
+        public void A_nonsense_width_is_ignored(double width)
         {
-            Assert.Null(Fit(width, height));
+            Assert.Null(Width(width));
         }
     }
 
@@ -485,16 +482,31 @@ namespace Flyweight.Tests
         }
 
         [Fact]
-        public void The_window_size_survives_a_save_and_load()
+        public void The_windows_width_survives_a_save_and_load()
         {
             var s = AppSettings.Load(_path);
             s.WindowWidth = 900;
-            s.WindowHeight = 700;
             s.Save(_path);
 
+            Assert.Equal(900, AppSettings.Load(_path).WindowWidth);
+        }
+
+        [Fact]
+        public void A_height_kept_by_an_earlier_version_is_let_go_of()
+        {
+            var s = AppSettings.Load(_path);
+            s.WindowWidth = 900;
+            s.Save(_path);
+            // As an earlier version left it, which remembered a height as well.
+            string asWritten = File.ReadAllText(_path);
+            Assert.Contains("\"WindowWidth\":900", asWritten);
+            File.WriteAllText(_path, asWritten.Replace("\"WindowWidth\":900", "\"WindowHeight\":780,\"WindowWidth\":900"));
+
             var loaded = AppSettings.Load(_path);
+            loaded.Save(_path);
+
             Assert.Equal(900, loaded.WindowWidth);
-            Assert.Equal(700, loaded.WindowHeight);
+            Assert.DoesNotContain("WindowHeight", File.ReadAllText(_path));
         }
 
         [Fact]

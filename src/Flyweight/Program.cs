@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using Flyweight.Core;
@@ -13,6 +15,7 @@ namespace Flyweight
         private const string InstanceId = "Flyweight-Instance";
         private const int HandOverTimeoutMs = 5000;
         private const int HandOverAttempts = 3;
+        private const int AnyProcess = -1;
 
         [STAThread]
         public static int Main(string[] args)
@@ -41,6 +44,10 @@ namespace Flyweight
                 for (int attempt = 0; attempt < HandOverAttempts; attempt++)
                 {
                     if (instance.TryBecomePrimary()) return RunWindow(cli, instance);
+
+                    // A trim, or the app opened on purpose, should come to the front. Windows only
+                    // lets the copy that was just started do that, so it passes the right along.
+                    if (cli.Trim || cli.Files.Count == 0) AllowSetForegroundWindow(AnyProcess);
                     if (SingleInstance.Send(InstanceId, cli.ToMessage(), HandOverTimeoutMs)) return 0;
                 }
                 // The other copy is stuck. Better to do the work separately than to drop it.
@@ -55,6 +62,10 @@ namespace Flyweight
             {
                 MessageBox.Show("Something went wrong:\n\n" + e.Exception.Message, Installer.DisplayName, MessageBoxButton.OK, MessageBoxImage.Error);
                 e.Handled = true;
+
+                // Carrying on only makes sense with a window to carry on in. Started just to trim,
+                // there may not be one yet, and the app must never be left running unseen.
+                if (!app.Windows.OfType<Window>().Any(open => open.IsVisible)) app.Shutdown();
             };
 
             bool adopted = AppSettings.AdoptFormerSettings(AppSettings.FormerPath, AppSettings.DefaultPath);
@@ -68,6 +79,16 @@ namespace Flyweight
             instance.StartListening(message =>
                 window.Dispatcher.BeginInvoke(new Action(() => window.HandleRequest(CliArgs.FromMessage(message)))));
 
+            if (compact && cli.Trim)
+            {
+                // Nothing shows until the video has been looked at. Then the window opens straight
+                // onto its trim controls, rather than as the corner window first and in full a moment later.
+                window.ShowWhenNeeded = window.Show;
+                app.MainWindow = window;
+                app.Startup += (s, e) => window.TrimFirst(cli.Files);
+                return app.Run();
+            }
+
             window.Loaded += (s, e) =>
             {
                 if (compact) window.AddPaths(cli.Files, cli.Level, cli.PresetId);
@@ -75,6 +96,9 @@ namespace Flyweight
 
             return app.Run(window);
         }
+
+        [DllImport("user32.dll")]
+        private static extern bool AllowSetForegroundWindow(int processId);
 
         private static void UpdateRightClickMenu(AppSettings settings)
         {

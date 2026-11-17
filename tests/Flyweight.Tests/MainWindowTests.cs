@@ -19,6 +19,7 @@ namespace Flyweight.Tests
     /// Drives the real window without showing it on screen. WPF needs an STA thread, which xUnit
     /// doesn't provide, so each test hops onto its own.
     /// </summary>
+    [Collection(WindowTests.Name)]
     public class MainWindowTests : IDisposable
     {
         private readonly string _folder = Path.Combine(Path.GetTempPath(), "fw-ui-" + Guid.NewGuid().ToString("N"));
@@ -865,30 +866,29 @@ namespace Flyweight.Tests
         }
 
         [Fact]
-        public void Until_someone_resizes_it_the_window_fits_its_contents()
+        public void The_window_is_as_tall_as_what_is_in_it()
         {
             OnUiThread(() => Assert.Equal(SizeToContent.Height, NewWindow().SizeToContent));
         }
 
         [Fact]
-        public void A_remembered_size_comes_back()
+        public void A_remembered_width_comes_back_and_the_height_still_fits_what_is_in_it()
         {
             OnUiThread(() =>
             {
-                var window = NewWindow(SettingsWithWindowSize(900, 700));
+                var window = NewWindow(SettingsWithWindowWidth(900));
 
-                Assert.Equal(SizeToContent.Manual, window.SizeToContent);
                 Assert.Equal(900, window.Width);
-                Assert.Equal(700, window.Height);
+                Assert.Equal(SizeToContent.Height, window.SizeToContent);
             });
         }
 
         [Fact]
-        public void The_corner_window_ignores_a_remembered_size_until_it_opens_fully()
+        public void The_corner_window_ignores_a_remembered_width_until_it_opens_fully()
         {
             OnUiThread(() =>
             {
-                var window = NewWindow(SettingsWithWindowSize(900, 700), compact: true);
+                var window = NewWindow(SettingsWithWindowWidth(900), compact: true);
                 Assert.Equal(SizeToContent.Height, window.SizeToContent);
                 Assert.Equal(480, window.Width);
 
@@ -896,9 +896,83 @@ namespace Flyweight.Tests
 
                 Assert.Equal(ResizeMode.CanResize, window.ResizeMode);
                 Assert.Equal(900, window.Width);
-                Assert.Equal(700, window.Height);
+                Assert.Equal(SizeToContent.Height, window.SizeToContent);
             });
         }
+
+        /// <summary>As WPF leaves a window once an edge of it has been dragged: a size of somebody's choosing.</summary>
+        private static void DragTo(MainWindow window, double width, double height)
+        {
+            window.SizeToContent = SizeToContent.Manual;
+            window.Width = width;
+            window.Height = height;
+        }
+
+        [Fact]
+        public void Dragged_taller_it_goes_back_to_fitting_what_is_in_it_at_the_width_it_was_given()
+        {
+            OnUiThread(() =>
+            {
+                var window = NewWindow();
+                DragTo(window, 800, 900);
+
+                window.FitHeight();
+
+                Assert.Equal(SizeToContent.Height, window.SizeToContent);
+                Assert.Equal(800, window.Width);
+            });
+        }
+
+        [Fact]
+        public void While_an_edge_is_being_dragged_it_is_left_alone_and_fitted_once_it_is_let_go()
+        {
+            OnUiThread(() =>
+            {
+                var window = NewWindow();
+                window.WindowMessage(0x0231);   // Windows saying a drag has begun
+                DragTo(window, 800, 900);
+
+                window.FitHeight();
+                Assert.Equal(SizeToContent.Manual, window.SizeToContent);
+
+                window.WindowMessage(0x0232);   // and that it's over
+                Pump(() => window.SizeToContent == SizeToContent.Height);
+                Assert.Equal(800, window.Width);
+            });
+        }
+
+        [Fact]
+        public void Maximized_it_is_left_as_tall_as_the_screen()
+        {
+            OnUiThread(() =>
+            {
+                var window = NewWindow();
+                window.WindowState = WindowState.Maximized;
+                window.SizeToContent = SizeToContent.Manual;
+
+                window.FitHeight();
+
+                Assert.Equal(SizeToContent.Manual, window.SizeToContent);
+            });
+        }
+
+        [Fact]
+        public void Snapped_to_a_side_of_the_screen_it_is_left_as_Windows_arranged_it()
+        {
+            OnUiThread(() =>
+            {
+                var window = NewWindow();
+                window.IsSnapped = () => true;
+                DragTo(window, 768, 824);
+
+                window.FitHeight();
+
+                Assert.Equal(SizeToContent.Manual, window.SizeToContent);
+                Assert.Equal(824, window.Height);
+            });
+        }
+
+
 
         [Fact]
         public void A_wide_window_moves_advanced_options_to_the_side_and_back()
@@ -952,11 +1026,13 @@ namespace Flyweight.Tests
         }
 
         [Fact]
-        public void In_a_tall_window_the_queue_uses_the_spare_room()
+        public void In_a_window_made_taller_than_what_is_in_it_the_queue_uses_the_spare_room()
         {
             OnUiThread(() =>
             {
-                var window = NewWindow(SettingsWithWindowSize(480, 1000));
+                // Maximized, or snapped to a side of the screen.
+                var window = NewWindow();
+                window.SizeToContent = SizeToContent.Manual;
                 for (int i = 0; i < 30; i++) window.Jobs.Add(new JobViewModel($@"C:\v\clip {i}.mp4", Presets.Default(LevelId.Light)));
                 window.RefreshQueueArea();
 
@@ -985,25 +1061,24 @@ namespace Flyweight.Tests
         }
 
         [Fact]
-        public void Closing_remembers_a_size_someone_chose()
+        public void Closing_remembers_the_width_someone_gave_it_whatever_height_it_has()
         {
             OnUiThread(() =>
             {
                 var window = NewWindow();
-                window.SizeToContent = SizeToContent.Manual;
-                window.Width = 1000;
-                window.Height = 720;
-
+                DragTo(window, 1000, 720);
                 window.RememberSize();
+                Assert.Equal(1000, AppSettings.Load(SettingsPath).WindowWidth);
 
-                var saved = AppSettings.Load(SettingsPath);
-                Assert.Equal(1000, saved.WindowWidth);
-                Assert.Equal(720, saved.WindowHeight);
+                window.FitHeight();
+                window.Width = 840;
+                window.RememberSize();
+                Assert.Equal(840, AppSettings.Load(SettingsPath).WindowWidth);
             });
         }
 
         [Fact]
-        public void A_window_left_fitting_its_contents_remembers_nothing()
+        public void A_window_left_at_the_width_it_starts_out_with_remembers_nothing()
         {
             OnUiThread(() =>
             {
@@ -1013,12 +1088,14 @@ namespace Flyweight.Tests
         }
 
         [Fact]
-        public void The_corner_window_remembers_nothing()
+        public void A_window_put_back_to_the_width_it_starts_out_with_forgets_the_one_it_had()
         {
             OnUiThread(() =>
             {
-                var window = NewWindow(compact: true);
-                window.SizeToContent = SizeToContent.Manual;
+                var settings = SettingsWithWindowWidth(900);
+                settings.Save(SettingsPath);
+                var window = NewWindow(settings);
+                window.Width = 480;
 
                 window.RememberSize();
 
@@ -1026,11 +1103,44 @@ namespace Flyweight.Tests
             });
         }
 
-        private AppSettings SettingsWithWindowSize(double width, double height)
+        [Theory]
+        [InlineData(900)]   // a width somebody chose, which the window still has
+        [InlineData(480)]   // the width it starts out at, which an earlier version kept as if it had been chosen
+        public void Closing_does_not_write_the_settings_out_again_when_nothing_that_matters_has_changed(double remembered)
+        {
+            OnUiThread(() =>
+            {
+                var longAgo = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                var settings = SettingsWithWindowWidth(remembered);
+                settings.Save(SettingsPath);
+                File.SetLastWriteTimeUtc(SettingsPath, longAgo);
+
+                NewWindow(settings).RememberSize();
+
+                Assert.Equal(longAgo, File.GetLastWriteTimeUtc(SettingsPath));
+            });
+        }
+
+        [Fact]
+        public void The_corner_window_remembers_nothing()
+        {
+            OnUiThread(() =>
+            {
+                var settings = SettingsWithWindowWidth(900);
+                settings.Save(SettingsPath);
+                var window = NewWindow(settings, compact: true);
+
+                window.RememberSize();
+
+                // What the full window was left at is still there for when it's next opened.
+                Assert.Equal(900, AppSettings.Load(SettingsPath).WindowWidth);
+            });
+        }
+
+        private AppSettings SettingsWithWindowWidth(double width)
         {
             var settings = AppSettings.Load(SettingsPath);
             settings.WindowWidth = width;
-            settings.WindowHeight = height;
             return settings;
         }
 
@@ -1183,21 +1293,6 @@ namespace Flyweight.Tests
             window.RefreshQueueArea();
         }
 
-        private static void Snapshot(Window window, string path, int width = 480)
-        {
-            var root = (FrameworkElement)window.Content;
-            root.Width = width;
-            root.Measure(new Size(width, double.PositiveInfinity));
-            root.Arrange(new Rect(new Size(width, root.DesiredSize.Height)));
-            root.UpdateLayout();
-            Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
-
-            const double scale = 2;
-            var bitmap = new RenderTargetBitmap((int)(width * scale), (int)(root.ActualHeight * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
-            bitmap.Render(root);
-            var encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(bitmap));
-            using (var file = File.Create(path)) encoder.Save(file);
-        }
+        private static void Snapshot(Window window, string path, int width = 480) => Ui.Snapshot(window, path, width);
     }
 }

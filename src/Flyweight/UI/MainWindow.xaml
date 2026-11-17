@@ -47,17 +47,39 @@
 
       <StackPanel x:Name="MainControls">
 
-        <!-- Drop zone -->
-        <Button x:Name="DropZone" Style="{DynamicResource DropZoneButton}" Height="132" Click="DropZone_Click"
-                AutomationProperties.Name="Choose videos to compress">
-          <StackPanel HorizontalAlignment="Center">
-            <Path Data="M12,3 V15 M7,10.5 L12,15.5 L17,10.5 M4,20 H20" Stroke="{DynamicResource Accent}" StrokeThickness="1.8"
-                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                  HorizontalAlignment="Center" Margin="0,0,0,8" Width="24" Height="24" />
-            <TextBlock Text="Drop videos here" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" />
-            <TextBlock Text="or click to choose files" Style="{DynamicResource Muted}" HorizontalAlignment="Center" Margin="0,2,0,0" />
-          </StackPanel>
-        </Button>
+        <!-- While a part of a video is being picked, its trim controls stand here in place of the drop zones -->
+        <Decorator x:Name="TrimSlot" Visibility="Collapsed" />
+
+        <!-- Drop zone, and a smaller one beside it for choosing which part of a video to keep first -->
+        <Grid x:Name="DropZones">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="8" />
+            <ColumnDefinition Width="124" />
+          </Grid.ColumnDefinitions>
+          <Button x:Name="DropZone" Grid.Column="0" Style="{DynamicResource DropZoneButton}" Height="132" Click="DropZone_Click"
+                  AutomationProperties.Name="Choose videos to compress">
+            <StackPanel HorizontalAlignment="Center">
+              <Path Data="M12,3 V15 M7,10.5 L12,15.5 L17,10.5 M4,20 H20" Stroke="{DynamicResource Accent}" StrokeThickness="1.8"
+                    StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                    HorizontalAlignment="Center" Margin="0,0,0,8" Width="24" Height="24" />
+              <TextBlock Text="Drop videos here" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" />
+              <TextBlock Text="or click to choose files" Style="{DynamicResource Muted}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+            </StackPanel>
+          </Button>
+          <Button x:Name="TrimZone" Grid.Column="2" Style="{DynamicResource DropZoneButton}" Height="132" Click="TrimZone_Click"
+                  AutomationProperties.Name="Choose a video to trim or crop first"
+                  ToolTip="Pick the part of a video to keep, or crop its picture, before it's compressed">
+            <StackPanel HorizontalAlignment="Center">
+              <Path Data="M3,6 A3,3 0 1 0 9,6 A3,3 0 1 0 3,6 M3,18 A3,3 0 1 0 9,18 A3,3 0 1 0 3,18 M8.2,8.2 L20.5,20 M8.2,15.8 L20.5,4"
+                    Stroke="{DynamicResource Accent}" StrokeThickness="1.8"
+                    StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                    HorizontalAlignment="Center" Margin="0,0,0,8" Width="24" Height="24" />
+              <TextBlock x:Name="TrimZoneTitle" Text="Trim or crop first" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" />
+              <TextBlock Text="drop or click" Style="{DynamicResource Muted}" HorizontalAlignment="Center" Margin="0,2,0,0" />
+            </StackPanel>
+          </Button>
+        </Grid>
         <TextBlock x:Name="DropHint" Visibility="Collapsed" Foreground="{DynamicResource Danger}" Margin="2,6,0,0"
                    Text="That doesn't look like a video, so nothing was added." />
 
@@ -112,6 +134,7 @@
         <!-- Advanced -->
         <Decorator x:Name="StackedSlot">
         <Border x:Name="AdvancedPanel" Visibility="Collapsed" Margin="0,10,0,0" Padding="14,12" CornerRadius="8"
+                PreviewMouseWheel="AdvancedPanel_PreviewMouseWheel"
                 Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Line}" BorderThickness="1">
           <StackPanel Grid.IsSharedSizeScope="True">
           <Grid x:Name="PresetNameRow" Visibility="Collapsed" Margin="0,0,0,8">
@@ -193,9 +216,13 @@
         </Decorator>
       </StackPanel>
 
+      <!-- Shown while a video sent to be trimmed is taking its time to open -->
+      <TextBlock x:Name="TrimNote" Style="{DynamicResource Muted}" Visibility="Collapsed" Margin="2,10,0,0" TextTrimming="CharacterEllipsis" />
+
       <!-- Queue -->
       <StackPanel x:Name="QueueArea" Visibility="Collapsed">
-        <ScrollViewer x:Name="QueueScroller" VerticalScrollBarVisibility="Auto" Focusable="False" Margin="0,12,0,0">
+        <ScrollViewer x:Name="QueueScroller" VerticalScrollBarVisibility="Auto" Focusable="False" Margin="0,12,0,0"
+                      PreviewMouseWheel="QueueScroller_PreviewMouseWheel">
           <ItemsControl x:Name="QueueList" Focusable="False">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
@@ -207,7 +234,7 @@
                       <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding FileName}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding InputPath}" />
+                      <TextBlock Text="{Binding Label}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding InputPath}" />
                       <TextBlock x:Name="StatusText" Text="{Binding Status}" Style="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,1,0,0" />
                       <ProgressBar Value="{Binding Percent, Mode=OneWay}" Margin="0,6,0,2"
                                    Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}" />

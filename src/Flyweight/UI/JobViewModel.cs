@@ -21,17 +21,26 @@ namespace Flyweight.UI
         private string _resultPath;
         private string _details;
 
-        public JobViewModel(string path, LevelSettings settings)
+        public JobViewModel(string path, LevelSettings settings, TrimRange trim = null, CropArea crop = null)
         {
             InputPath = path;
             Settings = settings;
+            Trim = trim;
+            Crop = crop;
         }
+
+        /// <summary>The part of the picture to keep, or null to keep all of it.</summary>
+        public CropArea Crop { get; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public string InputPath { get; }
         public LevelSettings Settings { get; }
+        public TrimRange Trim { get; }
         public string FileName => Path.GetFileName(InputPath);
+
+        /// <summary>What the row is headed with: the file, and what of it is being kept when that isn't all of it.</summary>
+        public string Label => Format.Part(FileName, Trim) + (Crop == null ? "" : " · cropped");
         public CancellationToken CancelToken => _cancel.Token;
 
         public string Status { get => _status; private set => Set(ref _status, value, nameof(Status)); }
@@ -79,8 +88,12 @@ namespace Flyweight.UI
                 case JobOutcome.Done:
                     Percent = 100;
                     ResultPath = result.OutputPath;
-                    string savings = Format.Savings(result.InputBytes, result.OutputBytes);
-                    Status = string.IsNullOrEmpty(result.Message) ? savings : $"{savings} · {result.Message}";
+                    // A trimmed or cropped copy is smaller mostly for being shorter or a smaller picture,
+                    // so a percentage would mislead.
+                    string summary = result.KeptSeconds.HasValue ? Format.Trimmed(result.KeptSeconds.Value, result.OutputBytes)
+                        : result.Cropped ? "Cropped · " + Format.Size(result.OutputBytes)
+                        : Format.Savings(result.InputBytes, result.OutputBytes);
+                    Status = string.IsNullOrEmpty(result.Message) ? summary : $"{summary} · {result.Message}";
                     break;
                 case JobOutcome.AlreadySmall:
                     ResultPath = InputPath;

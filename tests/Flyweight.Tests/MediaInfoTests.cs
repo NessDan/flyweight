@@ -174,5 +174,41 @@ namespace Flyweight.Tests
         {
             Assert.Throws<CompressionException>(() => MediaInfo.Parse(json));
         }
+
+        private static VideoStreamInfo VideoWith(string sampleAspect, int rotation = 0)
+        {
+            string aspect = sampleAspect == null ? "" : $@", ""sample_aspect_ratio"": ""{sampleAspect}""";
+            string side = rotation == 0 ? "" : $@", ""side_data_list"": [ {{ ""side_data_type"": ""Display Matrix"", ""rotation"": {rotation} }} ]";
+            return MediaInfo.Parse($@"{{ ""streams"": [ {{ ""index"": 0, ""codec_type"": ""video"", ""width"": 720, ""height"": 480{aspect}{side} }} ], ""format"": {{ ""duration"": ""10"" }} }}").Video;
+        }
+
+        [Fact]
+        public void Knows_how_wide_a_picture_with_stretched_pixels_is_shown()
+        {
+            var dvd = VideoWith("32:27");
+
+            Assert.Equal(32.0 / 27, dvd.PixelAspect, 6);
+            Assert.Equal(16.0 / 9, dvd.ShownAspect, 3);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("1:1")]
+        [InlineData("0:1")]     // ffprobe's way of saying it doesn't know
+        [InlineData("N/A")]
+        public void Pixels_are_taken_as_square_unless_the_file_says_otherwise(string sampleAspect)
+        {
+            var video = VideoWith(sampleAspect);
+
+            Assert.Equal(1, video.PixelAspect);
+            Assert.Equal(1.5, video.ShownAspect, 6);
+        }
+
+        [Fact]
+        public void A_sideways_picture_with_stretched_pixels_is_shown_tall()
+        {
+            // Stored 720 by 480 with pixels a third wider than tall: shown 960 by 480, and on its side 480 by 960.
+            Assert.Equal(0.5, VideoWith("4:3", rotation: 90).ShownAspect, 6);
+        }
     }
 }

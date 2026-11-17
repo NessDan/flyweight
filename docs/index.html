@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Flyweight: a tiny video compressor for Windows</title>
-<meta name="description" content="Drop a video in and get a smaller one out, or right-click any video and pick a level. Free for Windows 10 and 11. The app is 150 KB and nothing runs in the background.">
+<meta name="description" content="Drop a video in and get a smaller one out, or right-click any video and pick a level. Free for Windows 10 and 11. The app is about 230 KB and nothing runs in the background.">
 <link rel="canonical" href="https://getflyweight.com/">
 <meta name="theme-color" content="#ff2f8e">
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -85,7 +85,7 @@
             Download for Windows
           </a>
           <ul class="facts">
-            <li>150 KB</li>
+            <li>231 KB</li>
             <li>No account</li>
             <li>No admin rights</li>
           </ul>
@@ -132,7 +132,7 @@
           <div class="titlebar" aria-hidden="true"><img src="img/icon.png" alt="" width="16" height="16">Flyweight<span class="window-controls"><i></i><i></i><i></i></span></div>
           <picture>
             <source srcset="img/app-dark.webp" media="(prefers-color-scheme: dark)">
-            <img src="img/app-light.webp" width="960" height="945" alt="The Flyweight window: a drop zone, the Light, Balanced and Maximum levels, and three videos in the queue. A 101 MB clip came out at 13 MB.">
+            <img src="img/app-light.webp" width="960" height="945" alt="The Flyweight window: a drop zone with a smaller Trim or crop first target beside it, the Light, Balanced and Maximum levels, and three videos in the queue. A 101 MB clip came out at 13 MB.">
           </picture>
           <span class="burst" aria-hidden="true">Free</span>
         </figure>
@@ -148,11 +148,12 @@
         <p>Open Flyweight and drop videos or whole folders on the window. They queue up and run one at a time.</p>
         <h3>Right-click it</h3>
         <p>Select one video or a stack of them, right-click, and pick a level under Compress video. A small window shows progress in the corner without taking focus from what you're doing, then closes itself.</p>
-        <p>Your original is never changed. The smaller copy lands next to it as <code>name_compressed.mp4</code>.</p>
+        <p>Only want part of a video, or part of the picture? Drop it on <strong>Trim or crop first</strong>, or pick <strong>Trim or crop first&hellip;</strong> from the right-click menu. Drag two handles to the part you want, or the corners of the picture to crop it, pick a level as usual, and it's cut there to the exact frame, with the sound still in step.</p>
+        <p>Your original is never changed. The smaller copy lands next to it as <code>name_compressed.mp4</code>, or <code>name_trimmed.mp4</code> or <code>name_cropped.mp4</code> if you trimmed or cropped it.</p>
       </div>
       <div class="screen">
         <div class="file" aria-hidden="true"><span class="file-icon"></span>Clip from X (4K).mp4</div>
-        <div class="menu-stage" role="img" aria-label="The right-click menu on a video. Compress video opens a submenu with Light (full resolution), Balanced (up to 1080p), Maximum (720p, 30 fps), and presets you've made, such as Discord.">
+        <div class="menu-stage" role="img" aria-label="The right-click menu on a video. Compress video opens a submenu with Light (full resolution), Balanced (up to 1080p), Maximum (720p, 30 fps), presets you've made, such as Discord, and Trim or crop first.">
           <div class="menu menu-main" aria-hidden="true">
             <div>Open</div>
             <div>Open with</div>
@@ -169,6 +170,8 @@
             <div>Maximum (720p, 30 fps)</div>
             <hr>
             <div>Discord</div>
+            <hr>
+            <div>Trim or crop first&hellip;</div>
           </div>
         </div>
         <figure class="window corner-window">
@@ -283,7 +286,7 @@
         <p>Need more control? <strong>Advanced options</strong> covers format (H.265, H.264 or AV1), graphics card or processor, quality, resolution, frame rate, audio, and your own ffmpeg flags. Changes stick, and the right-click menu uses them too.</p>
       </div>
       <dl class="tape knockout">
-        <div><dt>The program</dt><dd>150 KB</dd></div>
+        <div><dt>The program</dt><dd>231 KB</dd></div>
         <div><dt>Running when you're not using it</dt><dd>Nothing</dd></div>
         <div><dt>Starting with Windows</dt><dd>Nothing</dd></div>
         <div><dt>Admin rights needed</dt><dd>None</dd></div>
@@ -322,6 +325,10 @@
         <div>
           <h3>Which videos does it work with?</h3>
           <p>MP4, MOV, MKV, AVI, WMV, WebM, MPEG, FLV, TS and more. Results are always MP4. If a result wouldn't be smaller, your original is left as is and no new file is made.</p>
+        </div>
+        <div>
+          <h3>Can I keep just part of a video?</h3>
+          <p>Yes. Drop it on <strong>Trim or crop first</strong> in the window, or right-click it and choose <strong>Trim or crop first&hellip;</strong> from the menu. Pick where it should start and end, and the result is saved as <code>name_trimmed.mp4</code>. It keeps one part per video. To keep part of the picture instead, or as well, drag its corners in, and a picture-only crop is saved as <code>name_cropped.mp4</code>. <strong>Play</strong> plays your pick right there in the window, with its sound. After you move the end, it plays the three seconds leading up to the cut, so you can check where it ends without watching the whole part. While it plays, <strong>[</strong> and <strong>]</strong> beside Play, or the I and O keys, start or end the part on the picture you're watching. Hold a corner of the crop still for a moment and the picture zooms in around it, for a crop exact to a few pixels.</p>
         </div>
         <div>
           <h3>Will my videos still play everywhere?</h3>

@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -18,6 +19,19 @@ namespace Flyweight.Core
         public static void Attach(Process process)
         {
             if (Job != IntPtr.Zero) AssignProcessToJobObject(Job, process.Handle);
+        }
+
+        /// <summary>Ends a process, if it's still running.</summary>
+        public static void Kill(Process process)
+        {
+            try
+            {
+                process.Kill();
+            }
+            catch (Exception ex) when (ex is InvalidOperationException || ex is Win32Exception)
+            {
+                // Already exited.
+            }
         }
 
         private static IntPtr CreateKillOnCloseJob()

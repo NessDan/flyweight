@@ -110,7 +110,7 @@ namespace Flyweight.Tests
             using (var menu = Open(@"Flyweight.Menu\shell"))
             {
                 var names = menu.GetSubKeyNames().OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToArray();
-                Assert.Equal(new[] { "1_light", "2_balanced", "3_maximum", "4_000", "4_001" }, names);
+                Assert.Equal(new[] { "1_light", "2_balanced", "3_maximum", "4_000", "4_001", "9_trim" }, names);
             }
             using (var item = Open(@"Flyweight.Menu\shell\4_000"))
             using (var command = Open(@"Flyweight.Menu\shell\4_000\command"))

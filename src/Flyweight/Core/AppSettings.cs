@@ -53,9 +53,11 @@ namespace Flyweight.Core
         [DataMember] public string SelectedCustomId { get; set; }
         [DataMember] public List<CustomPreset> CustomPresets { get; set; } = new List<CustomPreset>();
 
-        /// <summary>Zero until someone resizes the window. Until then it fits its contents.</summary>
+        /// <summary>
+        /// Zero until someone makes the window wider. There's no height to go with it: the window is
+        /// always as tall as what's in it.
+        /// </summary>
         [DataMember] public double WindowWidth { get; set; }
-        [DataMember] public double WindowHeight { get; set; }
 
         /// <summary>The settings of whichever card is selected, built-in or custom.</summary>
         public LevelSettings Selected => FindCustom(SelectedCustomId)?.Settings ?? Get(SelectedLevel);
@@ -169,7 +171,6 @@ namespace Flyweight.Core
                 CustomPresets = CustomPresets,
                 OutputFolder = OutputFolder,
                 WindowWidth = WindowWidth,
-                WindowHeight = WindowHeight,
                 Light = IsDefault(LevelId.Light) ? null : Light,
                 Balanced = IsDefault(LevelId.Balanced) ? null : Balanced,
                 Maximum = IsDefault(LevelId.Maximum) ? null : Maximum,

@@ -14,6 +14,7 @@ namespace Flyweight.Core
         private const string VerbName = "Flyweight";
         private const string MenuKey = "Flyweight.Menu";
         private const string CustomKeyPrefix = "4_";
+        private const string TrimKey = "9_trim";
         private const int SeparatorBefore = 0x20;
 
         private static readonly (string Key, string Level, string Label)[] Items =
@@ -40,6 +41,18 @@ namespace Flyweight.Core
                 {
                     command.SetValue(null, $"\"{exePath}\" --level {item.Level} \"%1\"");
                 }
+            }
+
+            // Last in the list, after the custom presets, because it does something different from them.
+            using (var key = classes.CreateSubKey($@"{MenuKey}\shell\{TrimKey}"))
+            {
+                key.SetValue("MUIVerb", "Trim or crop first…");
+                key.SetValue("MultiSelectModel", "Player");
+                key.SetValue("CommandFlags", SeparatorBefore, RegistryValueKind.DWord);
+            }
+            using (var command = classes.CreateSubKey($@"{MenuKey}\shell\{TrimKey}\command"))
+            {
+                command.SetValue(null, $"\"{exePath}\" --trim \"%1\"");
             }
 
             foreach (string extension in VideoFiles.MenuExtensions)

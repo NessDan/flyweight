@@ -4,9 +4,13 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Shell;
 using System.Windows.Threading;
 using Flyweight.Core;
@@ -26,6 +30,13 @@ namespace Flyweight.UI
         private const double UsualQueueHeight = 290;
         private const double TitleBarAllowance = 64;
 
+        // What Windows calls WM_WINDOWPOSCHANGING, WM_ENTERSIZEMOVE and WM_EXITSIZEMOVE, and SWP_NOSIZE and SWP_NOMOVE.
+        private const int SizeIsChanging = 0x0046;
+        private const int DragBegins = 0x0231;
+        private const int DragEnds = 0x0232;
+        private const int KeepsItsSize = 0x0001;
+        private const int KeepsItsPlace = 0x0002;
+
         private readonly AppSettings _settings;
         private readonly string _settingsPath;
         private readonly DispatcherTimer _autoClose;
@@ -39,6 +50,8 @@ namespace Flyweight.UI
         private bool _closeWhenQueueStops;
         private int _autoCloseSecondsLeft;
         private bool _deleteArmed;
+        private bool _isBeingDragged;
+        private bool _cannotAskAboutSnapping;
         private double _arrangedForWidth;
 
         /// <param name="presetsChanged">Called when custom presets come, go or get renamed, so the right-click menu can follow.</param>
@@ -47,6 +60,8 @@ namespace Flyweight.UI
             _settings = settings;
             _settingsPath = settingsPath;
             _presetsChanged = presetsChanged;
+            WorkArea = WorkAreaOfItsScreen;
+            IsSnapped = IsSnappedByWindows;
 
             Theme.Apply(this, dark);
             _isLoadingLevel = true;
@@ -89,6 +104,12 @@ namespace Flyweight.UI
         /// <summary>A request from the command line or from a second copy of the app.</summary>
         public void HandleRequest(CliArgs request)
         {
+            if (request.Files.Count > 0 && request.Trim)
+            {
+                TrimFirst(request.Files);
+                return;
+            }
+
             if (request.Files.Count > 0)
             {
                 AddPaths(request.Files, request.Level, request.PresetId);
@@ -96,7 +117,10 @@ namespace Flyweight.UI
                 return;
             }
 
-            // Opening the app on purpose is the one time it should come forward.
+            // Opening the app on purpose is the one time it should come forward. If that happens
+            // while a right-click trim is up, the window is no longer the trim's to shrink or close.
+            if (IsTrimming) _beforeTrim.Compact = false;
+            Reveal();
             SetCompact(false);
             if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
             Activate();
@@ -124,8 +148,7 @@ namespace Flyweight.UI
             var files = VideoFiles.Expand(paths);
             if (files.Count == 0)
             {
-                if (Jobs.Count == 0) SetCompact(false);
-                DropHint.Visibility = Visibility.Visible;
+                ShowNothingAdded();
                 return;
             }
 
@@ -138,6 +161,7 @@ namespace Flyweight.UI
             }
 
             RefreshQueueArea();
+            Reveal();
             RunQueue();
         }
 
@@ -173,7 +197,7 @@ namespace Flyweight.UI
                 CompressionResult result;
                 try
                 {
-                    result = await Task.Run(() => compressor.Run(current.InputPath, current.Settings, folder, progress, current.CancelToken));
+                    result = await Task.Run(() => compressor.Run(current.InputPath, current.Settings, folder, progress, current.CancelToken, current.Trim, current.Crop));
                 }
                 catch (Exception ex)
                 {
@@ -194,8 +218,9 @@ namespace Flyweight.UI
             {
                 Close();
             }
-            else if (_isCompact && Jobs.All(j => !j.Failed))
+            else if (_isCompact && !_isAsking && _toTrim.Count == 0 && Jobs.All(j => !j.Failed))
             {
+                // Not while a trim is still being chosen, since that means there's more to come.
                 StartAutoClose();
             }
         }
@@ -273,11 +298,13 @@ namespace Flyweight.UI
 
         // ---- ffmpeg ----
 
-        private void SetTools(FFmpegTools tools)
+        internal void SetTools(FFmpegTools tools)
         {
+            _tools = tools;
             _compressor = tools == null ? null : new Compressor(tools);
             MissingToolsBanner.Visibility = tools == null ? Visibility.Visible : Visibility.Collapsed;
             if (tools != null && Jobs.Count > 0) RunQueue();
+            if (tools != null && _toTrim.Count > 0) AskAboutTrims();
         }
 
         private void InstallToolsButton_Click(object sender, RoutedEventArgs e)
@@ -316,11 +343,15 @@ namespace Flyweight.UI
 
             // The corner window is just a progress readout, so it stays the size it is.
             ResizeMode = compact ? ResizeMode.CanMinimize : ResizeMode.CanResize;
-            MinWidth = compact ? 0 : FullWindowMinWidth;
+            MinWidth = compact ? 0 : IsTrimming && _beforeTrim.Resized ? TrimWidth : FullWindowMinWidth;
             MinHeight = compact ? 0 : FullWindowMinHeight;
 
             if (compact)
             {
+                // The corner window is always the same size, whatever the full one had been given.
+                if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal;
+                SizeToContent = SizeToContent.Height;
+                Width = FullWindowMinWidth;
                 PlaceCompactWindow();
             }
             else if (wasCompact)
@@ -336,11 +367,11 @@ namespace Flyweight.UI
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            // Fitting its contents only ever changes the height. A new width means someone dragged or
-            // snapped the window, and from then on the size they chose stands.
-            if (!_isCompact && e.WidthChanged && e.PreviousSize.Width > 0) SizeToContent = SizeToContent.Manual;
+            // At a size somebody or Windows gave it: once that's over with, it fits its contents again.
+            if (SizeToContent == SizeToContent.Manual) FitHeightSoon();
 
             if (_isCompact) PlaceCompactWindow();
+            if (IsTrimming) KeepOnScreen();
             UpdateHeightLimit();
             ArrangeForWidth(e.NewSize.Width);
         }
@@ -350,32 +381,146 @@ namespace Flyweight.UI
             UpdateHeightLimit();
         }
 
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+            // Windows says when it's about to resize the window, and when someone starts and stops
+            // dragging it. WPF passes none of that on.
+            (PresentationSource.FromVisual(this) as HwndSource)?.AddHook(HearFromWindows);
+        }
+
+        private IntPtr HearFromWindows(IntPtr window, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (message == SizeIsChanging) LetWindowsSizeIt(window, lParam);
+            else WindowMessage(message);
+            return IntPtr.Zero;
+        }
+
+        /// <summary>
+        /// Windows is about to give the window a new size or place. While the window fits its
+        /// contents, WPF overrules any height but its own, which leaves a maximized window as a strip
+        /// across the top of the screen and a snapped one short. So where the size is Windows' to
+        /// give, the fitting stops here, before WPF hears of it, and <see cref="FitHeight"/> starts
+        /// it again once the window is an ordinary one.
+        /// </summary>
+        private void LetWindowsSizeIt(IntPtr window, IntPtr change)
+        {
+            // The corner window can't be maximized or snapped, only moved, and has to go on growing
+            // and shrinking with its rows.
+            if (_isCompact || SizeToContent == SizeToContent.Manual) return;
+
+            // While it's being dragged, too: dropped at the side of the screen, a window is snapped
+            // there before the drag is said to be over.
+            if (IsZoomed(window) || _isBeingDragged || IsGivenASize(window, change)) SizeToContent = SizeToContent.Manual;
+        }
+
+        /// <summary>
+        /// Whether this is Windows giving the window a size, as when it's snapped from the keyboard,
+        /// rather than a change made from here. Windows can't be asked: at this moment it doesn't
+        /// yet say that the window is snapped.
+        /// </summary>
+        private bool IsGivenASize(IntPtr window, IntPtr change)
+        {
+            // What Windows calls a WINDOWPOS: two handles, then left, top, width, height and flags.
+            int flags = Marshal.ReadInt32(change, 2 * IntPtr.Size + 16);
+            if ((flags & KeepsItsSize) != 0) return false;
+
+            // Windows gives a place and a size together. From here a window is only ever given one
+            // or the other: a size to fit its contents or make room, or somewhere to stand.
+            if ((flags & KeepsItsPlace) == 0) return true;
+
+            // And a width that wasn't asked for from here can only be Windows', or some other program's.
+            int width = Marshal.ReadInt32(change, 2 * IntPtr.Size + 8);
+            return !_isSettingWidth && GetWindowRect(window, out var now) && width != now.Right - now.Left;
+        }
+
+        internal void WindowMessage(int message)
+        {
+            if (message == DragBegins) _isBeingDragged = true;
+            if (message != DragEnds) return;
+
+            _isBeingDragged = false;
+            // A width it was dragged to while trimming is the one to come back to for as long as the trim lasts.
+            if (IsTrimming) _beforeTrim.Floor = Width;
+            FitHeightSoon();
+        }
+
+        /// <summary>
+        /// Once Windows has finished whatever it's doing to the window. Asked in the middle of that,
+        /// it can't yet say whether the window has just been snapped to a side of the screen.
+        /// </summary>
+        private void FitHeightSoon()
+        {
+            Dispatcher.BeginInvoke(new Action(FitHeight), DispatcherPriority.Background);
+        }
+
+        /// <summary>
+        /// Makes the window as tall as what's in it again, at whatever width it has now. Its height
+        /// isn't anyone's to keep: left tall, it would open tall and half empty next time. While an
+        /// edge is still being dragged it follows the hand, and maximized or snapped to a side of the
+        /// screen it's left as Windows arranged it.
+        /// </summary>
+        internal void FitHeight()
+        {
+            if (_isClosed || _isBeingDragged) return;
+            if (SizeToContent != SizeToContent.Manual || WindowState != WindowState.Normal || IsSnapped()) return;
+
+            // The limits that keep it on the screen go back first. Told to fit a long queue without
+            // them, it would be sized to all of it for a moment.
+            LimitHeight(fitsContents: true);
+            QueueScroller.MaxHeight = UsualQueueHeight;
+            SizeToContent = SizeToContent.Height;
+        }
+
+        /// <summary>Whether Windows has snapped the window to a side or corner of the screen. Tests answer for it.</summary>
+        internal Func<bool> IsSnapped;
+
+        private bool IsSnappedByWindows()
+        {
+            IntPtr handle = new WindowInteropHelper(this).Handle;
+            if (handle == IntPtr.Zero || _cannotAskAboutSnapping) return false;
+            try
+            {
+                return IsWindowArranged(handle);
+            }
+            catch (EntryPointNotFoundException)
+            {
+                // Windows from before 2019 can't say, and isn't asked again. There, a window snapped
+                // from the keyboard still takes the size it's given, then fits its contents like any other.
+                _cannotAskAboutSnapping = true;
+                return false;
+            }
+        }
+
         private void Layout_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             MakeRoomForQueue();
         }
 
+        /// <summary>Brings back the width the window was left at. Its height is whatever its contents come to.</summary>
         private void RestoreSize()
         {
-            var area = SystemParameters.WorkArea;
-            var size = WindowSizing.Fit(_settings.WindowWidth, _settings.WindowHeight, MinWidth, MinHeight, area.Width, area.Height);
-            if (size == null) return;
-
-            SizeToContent = SizeToContent.Manual;
-            Width = size.Value.Width;
-            Height = size.Value.Height;
-            UpdateHeightLimit();
+            double? width = WindowSizing.Width(_settings.WindowWidth, MinWidth, WorkArea().Width);
+            if (width.HasValue) SetOwnWidth(width.Value);
         }
 
-        /// <summary>Only a size someone chose gets remembered. Otherwise the window goes on fitting its contents.</summary>
+        /// <summary>Only the width is remembered, and only one that somebody gave it.</summary>
         internal void RememberSize()
         {
-            if (_isCompact || SizeToContent != SizeToContent.Manual) return;
+            // The corner window has no width of its own, whether it's showing progress or was opened up to trim.
+            if (_isCompact || (IsTrimming && _beforeTrim.Compact)) return;
 
-            // RestoreBounds is the size to come back to if it's maximized now, and empty if it was never shown.
-            var size = RestoreBounds.IsEmpty ? new Size(Width, Height) : RestoreBounds.Size;
-            _settings.WindowWidth = size.Width;
-            _settings.WindowHeight = size.Height;
+            // While trimming, the window has only borrowed its width: the one to remember is from
+            // before. Maximized or snapped, it's the one it comes back to, which is empty if it was never shown.
+            double width = IsTrimming && _beforeTrim.Resized ? _beforeTrim.Width
+                : RestoreBounds.IsEmpty ? Width : RestoreBounds.Width;
+            // The width it starts out at isn't one anybody chose, and an earlier version wrote that
+            // down as a width all the same. With nothing new to say, the settings aren't written out again.
+            double chosen = width > FullWindowMinWidth ? width : 0;
+            double remembered = _settings.WindowWidth > FullWindowMinWidth ? _settings.WindowWidth : 0;
+            if (chosen == remembered) return;
+
+            _settings.WindowWidth = chosen;
             Save();
         }
 
@@ -402,16 +547,20 @@ namespace Flyweight.UI
         }
 
         /// <summary>
-        /// Fitting its contents, the window has to stop at the bottom of the screen. Once someone has
-        /// chosen a size or maximized it, what they chose is the limit.
+        /// Fitting its contents, the window has to stop at the bottom of the screen. Maximized,
+        /// snapped or being dragged, the size it has been given is the limit.
         /// </summary>
         private void UpdateHeightLimit()
         {
-            bool fitsContents = SizeToContent != SizeToContent.Manual && WindowState == WindowState.Normal;
-            Root.MaxHeight = fitsContents ? SystemParameters.WorkArea.Height - TitleBarAllowance : double.PositiveInfinity;
+            LimitHeight(SizeToContent != SizeToContent.Manual && WindowState == WindowState.Normal);
         }
 
-        /// <summary>In a window of someone's chosen size, the queue gets whatever the rest leaves over.</summary>
+        private void LimitHeight(bool fitsContents)
+        {
+            Root.MaxHeight = fitsContents ? WorkArea().Height - TitleBarAllowance : double.PositiveInfinity;
+        }
+
+        /// <summary>In a window given a size, maximized say, the queue gets whatever the rest leaves over.</summary>
         private void MakeRoomForQueue()
         {
             double limit = UsualQueueHeight;
@@ -426,15 +575,63 @@ namespace Flyweight.UI
         /// <summary>Bottom-right, out of the way, like a copy-progress window.</summary>
         private void PlaceCompactWindow()
         {
-            var area = SystemParameters.WorkArea;
+            var area = WorkArea();
             double height = ActualHeight > 0 ? ActualHeight : 120;
             Left = area.Right - Width - 16;
             Top = area.Bottom - height - 16;
         }
 
+        /// <summary>The usable part of whichever screen the window is on, in the units its own size is in.</summary>
+        private Rect WorkAreaOfItsScreen()
+        {
+            // Not on a screen yet, it will open on the main one.
+            var source = PresentationSource.FromVisual(this) as HwndSource;
+            if (source?.CompositionTarget == null) return SystemParameters.WorkArea;
+
+            var info = new MonitorInfo { Size = Marshal.SizeOf(typeof(MonitorInfo)) };
+            if (!GetMonitorInfo(MonitorFromWindow(source.Handle, NearestMonitor), ref info)) return SystemParameters.WorkArea;
+
+            var toUnits = source.CompositionTarget.TransformFromDevice;
+            return new Rect(
+                toUnits.Transform(new Point(info.Work.Left, info.Work.Top)),
+                toUnits.Transform(new Point(info.Work.Right, info.Work.Bottom)));
+        }
+
+        private const int NearestMonitor = 2;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct ScreenRect
+        {
+            public int Left, Top, Right, Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MonitorInfo
+        {
+            public int Size;
+            public ScreenRect Whole;
+            public ScreenRect Work;
+            public int Flags;
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr window, int flags);
+
+        [DllImport("user32.dll")]
+        private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
+
+        [DllImport("user32.dll")]
+        private static extern bool IsWindowArranged(IntPtr window);
+
+        [DllImport("user32.dll")]
+        private static extern bool IsZoomed(IntPtr window);
+
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(IntPtr window, out ScreenRect edges);
+
         private void CenterOnScreen()
         {
-            var area = SystemParameters.WorkArea;
+            var area = WorkArea();
             Left = area.Left + (area.Width - ActualWidth) / 2;
             Top = area.Top + (area.Height - ActualHeight) / 2;
         }
@@ -443,37 +640,105 @@ namespace Flyweight.UI
 
         private static bool HasFiles(DragEventArgs e) => e.Data.GetDataPresent(DataFormats.FileDrop);
 
+        /// <summary>A drop anywhere in the window compresses, except on "Trim or crop first".</summary>
+        private bool IsOverTrimZone(DragEventArgs e)
+        {
+            if (!TrimZone.IsVisible) return false;
+
+            var point = e.GetPosition(TrimZone);
+            return point.X >= 0 && point.Y >= 0 && point.X <= TrimZone.ActualWidth && point.Y <= TrimZone.ActualHeight;
+        }
+
+        private void MarkDropTarget(Button target)
+        {
+            DropZone.Tag = target == DropZone ? "over" : null;
+            TrimZone.Tag = target == TrimZone ? "over" : null;
+        }
+
         private void Window_DragOver(object sender, DragEventArgs e)
         {
             if (!HasFiles(e)) return;
             e.Effects = DragDropEffects.Copy;
             e.Handled = true;
-            DropZone.Tag = "over";
+            MarkDropTarget(IsOverTrimZone(e) ? TrimZone : DropZone);
         }
 
         private void Window_DragLeave(object sender, DragEventArgs e)
         {
-            DropZone.Tag = null;
+            MarkDropTarget(null);
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
         {
-            DropZone.Tag = null;
+            MarkDropTarget(null);
             if (!HasFiles(e)) return;
             e.Handled = true;
-            AddPaths((string[])e.Data.GetData(DataFormats.FileDrop), null);
+            TakeDrop((string[])e.Data.GetData(DataFormats.FileDrop), IsOverTrimZone(e));
         }
+
+        private static string VideoFilter => $"Videos|{string.Join(";", VideoFiles.Extensions.Select(x => "*" + x))}|All files|*.*";
 
         private void DropZone_Click(object sender, RoutedEventArgs e)
         {
-            var patterns = string.Join(";", VideoFiles.Extensions.Select(x => "*" + x));
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
                 Title = "Choose videos to compress",
                 Multiselect = true,
-                Filter = $"Videos|{patterns}|All files|*.*",
+                Filter = VideoFilter,
             };
             if (dialog.ShowDialog(this) == true) AddPaths(dialog.FileNames, null);
+        }
+
+        private void TrimZone_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Choose a video to trim",
+                Filter = VideoFilter,
+            };
+            if (dialog.ShowDialog(this) == true) TrimFirst(dialog.FileNames);
+        }
+
+        // ---- scrolling ----
+
+        private void QueueScroller_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // The queue scrolls inside the page, and a scrolling area takes the wheel for itself even
+            // when it has nowhere further to go. Left to that, the page won't scroll for as long as
+            // the pointer is over the queue. So at either end of the queue, the page gets the wheel.
+            bool nowhereToGo = e.Delta < 0
+                ? QueueScroller.VerticalOffset >= QueueScroller.ScrollableHeight
+                : QueueScroller.VerticalOffset <= 0;
+            if (!nowhereToGo) return;
+
+            GiveThePageTheWheel(e);
+        }
+
+        private void AdvancedPanel_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // A dropdown that has the keyboard, as one does after a choice is made in it, takes the
+            // wheel to mean "next choice". Every choice here is saved as it's made, so scrolling with
+            // the pointer left over that dropdown would quietly change the level. Unless its list is
+            // open, the wheel scrolls the page and nothing else.
+            for (var at = e.OriginalSource as DependencyObject; at != null && at != AdvancedPanel; at = ParentOf(at))
+            {
+                if (at is ComboBox box)
+                {
+                    if (!box.IsDropDownOpen) GiveThePageTheWheel(e);
+                    return;
+                }
+            }
+        }
+
+        private static DependencyObject ParentOf(DependencyObject element)
+        {
+            return (element is Visual ? VisualTreeHelper.GetParent(element) : null) ?? LogicalTreeHelper.GetParent(element);
+        }
+
+        private void GiveThePageTheWheel(MouseWheelEventArgs e)
+        {
+            e.Handled = true;
+            Root.RaiseEvent(new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta) { RoutedEvent = MouseWheelEvent, Source = Root });
         }
 
         // ---- queue row buttons ----
@@ -714,6 +979,7 @@ namespace Flyweight.UI
         {
             AdvancedPanel.Visibility = AdvancedToggle.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
             ArrangeForWidth(_arrangedForWidth);
+            FitTrimWidth();
         }
 
         private void CodecBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

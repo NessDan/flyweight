@@ -11,11 +11,15 @@ namespace Flyweight.Core
     {
         private const string LevelPrefix = "level=";
         private const string PresetPrefix = "preset=";
+        private const string TrimPrefix = "trim=";
 
         public CliMode Mode { get; set; } = CliMode.Run;
         public bool Quiet { get; set; }
         public LevelId? Level { get; set; }
         public string PresetId { get; set; }
+
+        /// <summary>Ask which part of each file to keep first, rather than compressing it straight away.</summary>
+        public bool Trim { get; set; }
         public List<string> Files { get; set; } = new List<string>();
 
         public static CliArgs Parse(string[] args)
@@ -40,6 +44,9 @@ namespace Flyweight.Core
                     case "--preset":
                         if (i + 1 < args.Length) result.PresetId = args[++i];
                         break;
+                    case "--trim":
+                        result.Trim = true;
+                        break;
                     default:
                         result.Files.Add(args[i]);
                         break;
@@ -51,7 +58,10 @@ namespace Flyweight.Core
         public string ToMessage()
         {
             var lines = new List<string> { LevelPrefix + (Level?.ToString() ?? ""), PresetPrefix + (PresetId ?? "") };
-            lines.AddRange(Files);
+            // Every file is marked rather than the request as a whole. A window from before trimming
+            // existed reads these lines as files to compress, and a marked one matches no file, so it
+            // does nothing instead of compressing a video someone meant to trim.
+            lines.AddRange(Trim ? Files.Select(file => TrimPrefix + file) : Files);
             return string.Join("\n", lines);
         }
 
@@ -70,7 +80,8 @@ namespace Flyweight.Core
                 result.PresetId = id.Length > 0 ? id : null;
                 lines.RemoveAt(0);
             }
-            result.Files = lines;
+            result.Trim = lines.Count > 0 && lines.All(line => line.StartsWith(TrimPrefix, StringComparison.Ordinal));
+            result.Files = result.Trim ? lines.Select(line => line.Substring(TrimPrefix.Length)).ToList() : lines;
             return result;
         }
 

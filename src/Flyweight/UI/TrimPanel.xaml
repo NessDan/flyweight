@@ -1,0 +1,116 @@
+<UserControl x:Class="Flyweight.UI.TrimPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="clr-namespace:Flyweight.UI"
+             Focusable="True"
+             IsTabStop="False"
+             FocusVisualStyle="{x:Null}">
+  <UserControl.Resources>
+    <!-- The buttons on the picture: light on dark, like a player's, whatever the theme. Not somewhere
+         the keyboard stops: Space plays and pauses from anywhere among these controls, and a button
+         that had been clicked would keep Enter for itself. -->
+    <Style x:Key="OnPicture" TargetType="Button">
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Foreground" Value="#FFFFFFFF" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Padding" Value="9,3" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Back" Padding="{TemplateBinding Padding}" CornerRadius="6" Background="#B3000000">
+              <ContentPresenter />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Back" Property="Background" Value="#FF000000" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </UserControl.Resources>
+  <StackPanel>
+
+    <!-- The frame the last-moved handle stands for. Always dark, like a player, whatever the theme. -->
+    <Border x:Name="PreviewBox" Height="315" CornerRadius="8" Background="#FF101010" ClipToBounds="True">
+      <Grid>
+        <TextBlock x:Name="PreviewNote" Text="Getting the picture…" Foreground="#99FFFFFF" IsHitTestVisible="False"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <!-- The picture and the crop box over it, which zoom in together around a corner held still. -->
+        <Grid x:Name="PictureLayer">
+          <Image x:Name="PreviewImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+          <!-- The part of the picture to keep: over the picture, and under the buttons. -->
+          <ui:CropBox x:Name="Cropper" />
+        </Grid>
+        <!-- The buttons in the middle at the bottom, by themselves, so that however narrow the picture
+             they're out of the way of the crop box's corners. The words go beside them. -->
+        <Grid VerticalAlignment="Bottom" Margin="8">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition />
+          </Grid.ColumnDefinitions>
+          <StackPanel x:Name="PictureButtons" Grid.Column="1" Orientation="Horizontal">
+            <Button x:Name="StartHereButton" Style="{StaticResource OnPicture}" Padding="8,3" Margin="0,0,4,0" Click="StartHere_Click"
+                    AutomationProperties.Name="Start here" ToolTip="Start the part here (I)" FontWeight="SemiBold">[</Button>
+            <Button x:Name="PlayButton" Style="{StaticResource OnPicture}" Margin="0,0,4,0" Click="Play_Click"
+                    ToolTip="Space plays and pauses. A click on the strip plays from there.">
+              <StackPanel Orientation="Horizontal">
+                <Path x:Name="PlayIcon" Fill="#FFFFFFFF" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBlock x:Name="PlayText" />
+              </StackPanel>
+            </Button>
+            <Button x:Name="EndHereButton" Style="{StaticResource OnPicture}" Padding="8,3" Click="EndHere_Click"
+                    AutomationProperties.Name="End here" ToolTip="End the part here (O)" FontWeight="SemiBold">]</Button>
+          </StackPanel>
+          <!-- Only words: a press on them is a press on the picture under them. -->
+          <Border Grid.Column="2" HorizontalAlignment="Left" Margin="6,0,0,0" Padding="8,3" CornerRadius="6" Background="#B3000000" IsHitTestVisible="False">
+            <TextBlock x:Name="PreviewLabel" Foreground="#FFFFFFFF" FontSize="12" />
+          </Border>
+        </Grid>
+      </Grid>
+    </Border>
+
+    <ui:TrimStrip x:Name="Strip" Height="52" Margin="0,12,0,0" Cursor="SizeWE" />
+
+    <DockPanel Margin="0,10,0,0">
+      <!-- Only while part of the picture is cropped away. -->
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+        <TextBlock x:Name="CropSizeText" Style="{DynamicResource Muted}" VerticalAlignment="Center" Margin="0,0,10,0" Visibility="Collapsed" />
+        <!-- Not somewhere the keyboard stops: hidden by its own click, it would leave the keyboard nowhere. -->
+        <Button x:Name="ResetCropButton" Style="{DynamicResource LinkButton}" FontSize="12" Focusable="False" Visibility="Collapsed"
+                Click="ResetCrop_Click">Reset crop</Button>
+      </StackPanel>
+      <StackPanel Orientation="Horizontal">
+      <TextBlock Text="Start" VerticalAlignment="Center" Margin="0,0,8,0" />
+      <TextBox x:Name="StartBox" Width="92" Height="28" AutomationProperties.Name="Start time"
+               ToolTip="Up and Down step one frame. Hold Shift for one second."
+               LostFocus="TimeBox_LostFocus" PreviewKeyDown="TimeBox_PreviewKeyDown" />
+      <TextBlock Text="End" VerticalAlignment="Center" Margin="16,0,8,0" />
+      <TextBox x:Name="EndBox" Width="92" Height="28" AutomationProperties.Name="End time"
+               ToolTip="Up and Down step one frame. Hold Shift for one second."
+               LostFocus="TimeBox_LostFocus" PreviewKeyDown="TimeBox_PreviewKeyDown" />
+      </StackPanel>
+    </DockPanel>
+    <TextBlock x:Name="PlayNote" Visibility="Collapsed" Style="{DynamicResource Muted}" Margin="0,6,0,0" TextWrapping="Wrap"
+               Text="This video couldn't be played here. It can still be trimmed, cropped and compressed." />
+
+    <!-- No level to pick here: the video is compressed with whichever card is selected underneath. -->
+    <DockPanel Margin="0,12,0,0">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="12,0,0,0">
+        <Button x:Name="CancelButton" Style="{DynamicResource SecondaryButton}" Margin="0,0,8,0" Click="Cancel_Click">Cancel</Button>
+        <Button x:Name="ConfirmButton" Style="{DynamicResource PrimaryButton}" Click="Confirm_Click">Trim and compress</Button>
+      </StackPanel>
+      <TextBlock x:Name="KeepsText" Style="{DynamicResource Muted}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+    </DockPanel>
+
+    <!-- Only when several videos were sent to be trimmed at once -->
+    <DockPanel x:Name="WaitingRow" Visibility="Collapsed" Margin="0,10,0,0">
+      <Button x:Name="SkipAllButton" DockPanel.Dock="Right" Style="{DynamicResource LinkButton}" FontSize="12" Click="SkipAll_Click">Skip them all</Button>
+      <TextBlock x:Name="WaitingText" Style="{DynamicResource Muted}" VerticalAlignment="Center" />
+    </DockPanel>
+
+  </StackPanel>
+</UserControl>
