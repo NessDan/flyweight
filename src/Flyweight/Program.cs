@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using Flyweight.Core;
 using Flyweight.UI;
@@ -71,6 +72,11 @@ namespace Flyweight
             bool adopted = AppSettings.AdoptFormerSettings(AppSettings.FormerPath, AppSettings.DefaultPath);
             var settings = AppSettings.Load(AppSettings.DefaultPath);
             if (adopted) UpdateRightClickMenu(settings);
+
+            // The first video looked at in a run would wait about a quarter of a second while .NET works
+            // out how to read ffprobe's answer. Done now, alongside the window, it's ready in time. After
+            // the settings, so the two don't hold each other up working out how to read theirs.
+            Task.Run(() => MediaInfo.WarmUp());
 
             var tools = FFmpegLocator.Find();
             bool compact = cli.Files.Count > 0;

@@ -139,6 +139,25 @@ namespace Flyweight.Core
             }
         }
 
+        /// <summary>
+        /// Reads a made-up answer from ffprobe with every part a real one can have. The first time in
+        /// a run, .NET takes about a quarter of a second to work out how to read them, and this way
+        /// that's done before the first real one comes, alongside whatever else is starting up.
+        /// </summary>
+        public static void WarmUp()
+        {
+            try
+            {
+                Parse(@"{ ""streams"": [ { ""index"": 0, ""codec_type"": ""video"", ""tags"": { ""DURATION"": ""1"" },
+                    ""disposition"": { ""attached_pic"": 0 }, ""side_data_list"": [ { ""rotation"": 0 } ] } ],
+                    ""format"": { ""duration"": ""1"" } }");
+            }
+            catch (Exception)
+            {
+                // Nothing is lost. The first real answer just takes as long as it always did.
+            }
+        }
+
         public static MediaInfo Parse(string json)
         {
             ProbeRoot root;
