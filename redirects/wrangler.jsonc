@@ -1,7 +1,7 @@
 {
   // Publish with: npx wrangler deploy --config redirects/wrangler.jsonc
   "name": "flyweight-redirects",
-  // The Kasprofessional LLC Cloudflare account. Pinned so no command can deploy this anywhere else.
+  // The Cloudflare account the site lives in. Pinned so no command can deploy it anywhere else.
   "account_id": "b9c72d88225217fbbdd774010fef8be5",
   "main": "index.js",
   "compatibility_date": "2026-11-09",
