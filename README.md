@@ -159,7 +159,9 @@ pwsh ./build.ps1
 ```
 
 That runs the tests and writes `dist\FlyweightSetup.exe`. The tests need ffmpeg on the PATH,
-and some encode with NVENC when an NVIDIA card is present.
+and some encode with NVENC when an NVIDIA card is present. Tests that show a window or play sound
+skip themselves unless they're on a hidden desktop. `pwsh tests/run-build.ps1` does the same build
+with every test run on one, so nothing appears on screen.
 
 The engine is in `src/Flyweight/Core` and the windows are in `src/Flyweight/UI`.
 `CommandBuilder.cs` holds every decision about what gets passed to ffmpeg when compressing, and
